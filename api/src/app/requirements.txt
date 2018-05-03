@@ -1,0 +1,9 @@
+flask-restful
+flask-sqlalchemy
+flask-migrate
+flask-mail
+mysqlclient
+uwsgi
+pytest
+pytest-cov
+requests

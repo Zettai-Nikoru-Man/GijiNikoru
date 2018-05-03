@@ -1,0 +1,39 @@
+version: "3"
+services:
+
+  # GijiNikoru server
+  api:
+    build: api
+    ports:
+      - "5000:5000"
+    links:
+      - db
+    volumes:
+      - "./api/src/app:/usr/src/app"
+      - "./api/test/app:/usr/test/app"
+      - api:/tmp
+    environment:
+      - PYTHONPATH=/usr
+    sysctls:
+      net.core.somaxconn: 8192
+
+  # Web server
+  web:
+    build: web
+    ports:
+      - "80:80"
+    volumes:
+      - api:/tmp
+
+  # DB server
+  db:
+    image: mysql:5.6
+    volumes:
+      - "./db/config:/etc/mysql/conf.d"
+      - "./db/init:/docker-entrypoint-initdb.d"
+      - "./db/data:/var/lib/mysql"
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+
+volumes:
+  api:

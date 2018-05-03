@@ -1,0 +1,8 @@
+api/src/app/config/constants.py
+db/data
+.idea
+.python-version
+**/htmlcov
+**/__pycache__
+**/.coverage
+**/.pytest_cache
