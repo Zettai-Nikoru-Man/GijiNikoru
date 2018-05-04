@@ -15,6 +15,9 @@ alias dc-db-gen='dc exec api flask db migrate'
 # Upgrade db schema
 alias dc-db-upgrade='dc exec api flask db upgrade'
 
+# Downgrade db schema
+alias dc-db-downgrade='dc exec api flask db downgrade'
+
 # Log in to api server
 alias dc-in-api='dc exec api bash'
 

@@ -1,9 +1,7 @@
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from src.app.helpers.db_helper import db_session
 from src.app.models import Video
-from src.app.models.comment import Comment
-from src.app.models.comment import CommentDAO
 from src.app.models.nicoru import Nicoru, NicoruDAO
 from src.app.models.video import VideoDAO
 from test.app.models.data import TestData
@@ -15,23 +13,20 @@ class TestNicoru:
             record = Nicoru()
             record.video_id = TestData.VIDEO_ID_1
             record.comment_id = TestData.COMMENT_ID_1
-            record.commented_at = TestData.COMMENTED_AT_1
-            record.commented_point = TestData.COMMENTED_POINT_1
-            record.nikorare = 1
+            record.nicoru = 1
             assert str(record) == '<Nicoru {}-{}>'.format(record.video_id, record.comment_id)
 
 
 class TestNicoruDAO:
-    class Test_find_by_video_id:
+    class Test_get_nicoru_for_video:
         def test_not_found(self):
             with db_session() as session:
                 # setup
                 session.query(Nicoru).delete()
+                session.commit()
                 dao = NicoruDAO(session)
-
                 # run
-                stored = dao.find_by_video_id(TestData.VIDEO_ID_1)
-
+                stored = dao.get_nicoru_for_video(TestData.VIDEO_ID_1)
                 # verify
                 assert stored == {}
 
@@ -39,198 +34,83 @@ class TestNicoruDAO:
             with db_session() as session:
                 # setup
                 session.query(Nicoru).delete()
+                session.commit()
                 dao = NicoruDAO(session)
-                dao.add_or_update(video_id=TestData.VIDEO_ID_1,
-                                  comment_id=TestData.COMMENT_ID_1,
-                                  commented_at=TestData.COMMENTED_AT_1,
-                                  commented_point=TestData.COMMENTED_POINT_1)
-
+                dao.nicoru(video_id=TestData.VIDEO_ID_1,
+                           comment_id=TestData.COMMENT_ID_1)
+                session.commit()
                 # run
-                stored = dao.find_by_video_id(TestData.VIDEO_ID_1)
-
+                stored = dao.get_nicoru_for_video(TestData.VIDEO_ID_1)
                 # verify
                 assert stored == {TestData.COMMENT_ID_1: 1}
 
-    class Test_add_or_update:
+    class Test_nicoru:
         def test_add(self):
             with db_session() as session:
                 # setup
                 session.query(Nicoru).delete()
+                session.commit()
                 dao = NicoruDAO(session)
-
                 # run
-                new = dao.add_or_update(video_id=TestData.VIDEO_ID_1,
-                                        comment_id=TestData.COMMENT_ID_1,
-                                        commented_at=TestData.COMMENTED_AT_1,
-                                        commented_point=TestData.COMMENTED_POINT_1)
-
+                new = dao.nicoru(video_id=TestData.VIDEO_ID_1,
+                                 comment_id=TestData.COMMENT_ID_1)
+                session.commit()
                 # verify
                 assert new.video_id == TestData.VIDEO_ID_1
                 assert new.comment_id == TestData.COMMENT_ID_1
-                assert new.commented_at == TestData.COMMENTED_AT_1
-                assert new.commented_point == TestData.COMMENTED_POINT_1
-                assert new.nikorare == 1
+                assert new.nicoru == 1
                 stored = dao.find_by_video_id_and_comment_id(video_id=TestData.VIDEO_ID_1,
                                                              comment_id=TestData.COMMENT_ID_1)
                 assert stored.video_id == TestData.VIDEO_ID_1
                 assert stored.comment_id == TestData.COMMENT_ID_1
-                assert stored.commented_at == TestData.COMMENTED_AT_1
-                assert stored.commented_point == TestData.COMMENTED_POINT_1
-                assert stored.nikorare == 1
+                assert stored.nicoru == 1
 
         def test_update(self):
             with db_session() as session:
                 # setup
                 session.query(Nicoru).delete()
+                session.commit()
                 dao = NicoruDAO(session)
-                dao.add_or_update(video_id=TestData.VIDEO_ID_1,
-                                  comment_id=TestData.COMMENT_ID_1,
-                                  commented_at=TestData.COMMENTED_AT_1,
-                                  commented_point=TestData.COMMENTED_POINT_1)
-
+                dao.nicoru(video_id=TestData.VIDEO_ID_1,
+                           comment_id=TestData.COMMENT_ID_1)
+                session.commit()
                 # run
-                updated = dao.add_or_update(video_id=TestData.VIDEO_ID_1,
-                                            comment_id=TestData.COMMENT_ID_1,
-                                            commented_at=TestData.COMMENTED_AT_2,
-                                            commented_point=TestData.COMMENTED_POINT_2)
-
+                updated = dao.nicoru(video_id=TestData.VIDEO_ID_1,
+                                     comment_id=TestData.COMMENT_ID_1)
                 # verify
                 assert updated.video_id == TestData.VIDEO_ID_1
                 assert updated.comment_id == TestData.COMMENT_ID_1
-                assert updated.commented_at == TestData.COMMENTED_AT_2
-                assert updated.commented_point == TestData.COMMENTED_POINT_2
-                assert updated.nikorare == 2
+                assert updated.nicoru == 2
                 stored = dao.find_by_video_id_and_comment_id(video_id=TestData.VIDEO_ID_1,
                                                              comment_id=TestData.COMMENT_ID_1)
                 assert stored.video_id == TestData.VIDEO_ID_1
                 assert stored.comment_id == TestData.COMMENT_ID_1
-                assert stored.commented_at == TestData.COMMENTED_AT_2
-                assert stored.commented_point == TestData.COMMENTED_POINT_2
-                assert stored.nikorare == 2
+                assert stored.nicoru == 2
 
-    class Test_find_incomplete_comment_info:
+    class Test_find_incomplete_comment_records:
         """
         * We will get TR(target record)
         * TR are 0 or one or more nicoru records.
         * TR's video has more incomplete comments than other nicoru records.
         """
 
-        def get(self, nicorus: List[Tuple], comments: List[Tuple], expected: List[Tuple]):
-            with db_session() as session:
-                session.query(Nicoru).delete()
-                session.query(Comment).delete()
-                dao = NicoruDAO(session)
-                c_dao = CommentDAO(session)
-                for vid, cid in nicorus:
-                    dao.add_or_update(video_id=vid,
-                                      comment_id=cid,
-                                      commented_at=TestData.COMMENTED_AT_1,
-                                      commented_point=TestData.COMMENTED_POINT_1)
-                for vid, cid in comments:
-                    c_dao.add(
-                        id=cid,
-                        video_id=vid,
-                        text=TestData.Comment.TEXT_1,
-                        posted_at=TestData.Comment.POSTED_AT_1,
-                        posted_by=TestData.Comment.POSTED_BY_1,
-                        point=TestData.Comment.POINT_1,
-                        was_deleted=TestData.Comment.WAS_DELETED_1,
-                        original_nicorare=TestData.Comment.ORIGINAL_NICORARE_1,
-                        updated_at=TestData.Comment.UPDATED_AT_1,
-                    )
-                session.commit()
-                result = dao.find_incomplete_comment_info()
-                expected_2 = [(vid, cid, TestData.COMMENTED_POINT_1, TestData.COMMENTED_AT_1) for vid, cid in
-                              expected]
-                assert result == expected_2
-
-        def test_not_found_1(self):
-            self.get(nicorus=[
-                (TestData.VIDEO_ID_1, TestData.COMMENT_ID_1),
-            ], comments=[
-                (TestData.VIDEO_ID_1, TestData.COMMENT_ID_1),
-            ], expected=[
-            ])
-
-        def test_not_found_2(self):
-            self.get(nicorus=[
-                (TestData.VIDEO_ID_1, TestData.COMMENT_ID_1),
-                (TestData.VIDEO_ID_1, TestData.COMMENT_ID_2),
-            ], comments=[
-                (TestData.VIDEO_ID_1, TestData.COMMENT_ID_1),
-                (TestData.VIDEO_ID_1, TestData.COMMENT_ID_2),
-            ], expected=[
-            ])
-
-        def test_found_1(self):
-            self.get(nicorus=[
-                (TestData.VIDEO_ID_1, TestData.COMMENT_ID_1),
-                (TestData.VIDEO_ID_1, TestData.COMMENT_ID_2),
-            ], comments=[
-                (TestData.VIDEO_ID_1, TestData.COMMENT_ID_1),
-            ], expected=[
-                (TestData.VIDEO_ID_1, TestData.COMMENT_ID_2)
-            ])
-
-        def test_found_2(self):
-            self.get(nicorus=[
-                (TestData.VIDEO_ID_1, TestData.COMMENT_ID_1),
-                (TestData.VIDEO_ID_2, TestData.COMMENT_ID_1),
-                (TestData.VIDEO_ID_2, TestData.COMMENT_ID_2),
-                (TestData.VIDEO_ID_3, TestData.COMMENT_ID_1),
-            ], comments=[
-                (TestData.VIDEO_ID_1, TestData.COMMENT_ID_1),
-            ], expected=[
-                (TestData.VIDEO_ID_2, TestData.COMMENT_ID_1),  # video 2 has most incomplete nicoru records
-                (TestData.VIDEO_ID_2, TestData.COMMENT_ID_2),
-            ])
-
-        def test_found_3(self):
-            self.get(nicorus=[
-                (TestData.VIDEO_ID_1, TestData.COMMENT_ID_1),
-                (TestData.VIDEO_ID_2, TestData.COMMENT_ID_1),
-                (TestData.VIDEO_ID_2, TestData.COMMENT_ID_2),
-                (TestData.VIDEO_ID_3, TestData.COMMENT_ID_1),
-            ], comments=[
-                (TestData.VIDEO_ID_1, TestData.COMMENT_ID_1),
-                (TestData.VIDEO_ID_2, TestData.COMMENT_ID_1),
-            ], expected=[
-                (TestData.VIDEO_ID_3, TestData.COMMENT_ID_1),  # video 3 has newest nicoru records
-            ])
-
-        def test_found_4(self):
-            self.get(nicorus=[
-                (TestData.VIDEO_ID_1, TestData.COMMENT_ID_1),
-                (TestData.VIDEO_ID_2, TestData.COMMENT_ID_1),
-                (TestData.VIDEO_ID_2, TestData.COMMENT_ID_2),
-                (TestData.VIDEO_ID_3, TestData.COMMENT_ID_1),
-            ], comments=[
-                (TestData.VIDEO_ID_1, TestData.COMMENT_ID_1),
-                (TestData.VIDEO_ID_2, TestData.COMMENT_ID_1),
-                (TestData.VIDEO_ID_3, TestData.COMMENT_ID_1),
-            ], expected=[
-                (TestData.VIDEO_ID_2, TestData.COMMENT_ID_2),
-                # video 2 has newest and most incomplete nicoru records
-            ])
-
-    class Test_find_incomplete_video_info:
-        """
-        * We will get TR(target record)
-        * TR are 0 or one or more video ids.
-        * TR's video is incomplete.
-        """
-
-        def get(self, nicorus: List[str], videos: List[str], expected: List[str]):
+        def get(self, nicorus: List[Tuple], videos: List[str], expected: Tuple[Optional[str], Optional[List[str]]]):
             with db_session() as session:
                 session.query(Nicoru).delete()
                 session.query(Video).delete()
+                session.commit()
+
+                # insert nicorus
                 dao = NicoruDAO(session)
+                for vid, cid, is_completed in nicorus:
+                    added = dao.nicoru(video_id=vid, comment_id=cid)
+                    if is_completed:
+                        added.status = Nicoru.Status.HAS_REGULAR_COMMENT_DATA.value
+
+                session.commit()
+
+                # insert comments
                 v_dao = VideoDAO(session)
-                for vid in nicorus:
-                    dao.add_or_update(video_id=vid,
-                                      comment_id=TestData.COMMENT_ID_1,
-                                      commented_at=TestData.COMMENTED_AT_1,
-                                      commented_point=TestData.COMMENTED_POINT_1)
                 for vid in videos:
                     v_dao.add(
                         id=vid,
@@ -241,55 +121,125 @@ class TestNicoruDAO:
                         watch_url=TestData.Video.WATCH_URL_1,
                         posted_by=TestData.Video.POSTED_BY_1,
                         posted_by_name=TestData.Video.POSTED_BY_NAME_1,
-                        updated_at=TestData.Video.UPDATED_AT_1,
                     )
+
                 session.commit()
-                result = dao.find_incomplete_video_info()
-                expected_2 = [(vid,) for vid in expected]
-                assert result == expected_2
+                assert dao.find_incomplete_comment_records() == expected
+
+        def test_not_found_1(self):
+            self.get(nicorus=[
+                (TestData.VIDEO_ID_1, TestData.COMMENT_ID_1, True),
+            ], videos=[
+                TestData.VIDEO_ID_1,
+            ], expected=(None, None))  # video 1 has nicoru and video data and comment data
+
+        def test_not_found_2(self):
+            self.get(nicorus=[
+                (TestData.VIDEO_ID_1, TestData.COMMENT_ID_1, True),
+                (TestData.VIDEO_ID_2, TestData.COMMENT_ID_1, False),
+                (TestData.VIDEO_ID_2, TestData.COMMENT_ID_2, False),
+                (TestData.VIDEO_ID_3, TestData.COMMENT_ID_1, True),
+            ], videos=[
+                TestData.VIDEO_ID_1,
+            ], expected=(None, None))  # video 2 has nicoru but doesn't have video data
+
+        def test_found_1(self):
+            self.get(nicorus=[
+                (TestData.VIDEO_ID_1, TestData.COMMENT_ID_1, False),
+                (TestData.VIDEO_ID_2, TestData.COMMENT_ID_1, False),
+                (TestData.VIDEO_ID_2, TestData.COMMENT_ID_2, False),
+                (TestData.VIDEO_ID_3, TestData.COMMENT_ID_1, False),
+            ], videos=[
+                TestData.VIDEO_ID_1,
+                TestData.VIDEO_ID_2,
+            ], expected=(TestData.VIDEO_ID_2, [  # video 2 has nicoru and video data and doesn't have comment data
+                TestData.COMMENT_ID_1,
+                TestData.COMMENT_ID_2,
+            ]))
+
+    class Test_find_incomplete_video_id:
+        """
+        * We will get TR(target record)
+        * TR are 0 or one or more video ids.
+        * TR's video is incomplete.
+        """
+
+        def get(self, nicorus: List[str], completed_video_ids: List[str], expected: Optional[str]):
+            with db_session() as session:
+                session.query(Nicoru).delete()
+                session.query(Video).delete()
+                session.commit()
+
+                dao = NicoruDAO(session)
+                for vid in nicorus:
+                    dao.nicoru(video_id=vid,
+                               comment_id=TestData.COMMENT_ID_1)
+
+                session.commit()
+
+                for vid in completed_video_ids:
+                    record = dao.find_by_video_id_and_comment_id(vid, TestData.COMMENT_ID_1)
+                    record.status = Nicoru.Status.HAS_REGULAR_COMMENT_DATA.value
+
+                session.commit()
+
+                result = dao.find_incomplete_video_id()
+                assert result == expected
 
         def test_not_found_1(self):
             self.get(nicorus=[
                 TestData.VIDEO_ID_1,
-            ], videos=[
+            ], completed_video_ids=[
                 TestData.VIDEO_ID_1,
-            ], expected=[
-            ])
+            ], expected=None)
 
         def test_not_found_2(self):
             self.get(nicorus=[
                 TestData.VIDEO_ID_1,
                 TestData.VIDEO_ID_2,
-            ], videos=[
+            ], completed_video_ids=[
                 TestData.VIDEO_ID_1,
                 TestData.VIDEO_ID_2,
-            ], expected=[
-            ])
+            ], expected=None)
 
         def test_found_1(self):
             self.get(nicorus=[
                 TestData.VIDEO_ID_1,
-            ], videos=[
-            ], expected=[
-                TestData.VIDEO_ID_1,
-            ])
+            ], completed_video_ids=[
+            ], expected=TestData.VIDEO_ID_1)
 
-        def test_found_2(self):
-            self.get(nicorus=[
-                TestData.VIDEO_ID_1,
-                TestData.VIDEO_ID_2,
-            ], videos=[
-                TestData.VIDEO_ID_1,
-            ], expected=[
-                TestData.VIDEO_ID_2,
-            ])
+    class Test_update_status:
+        def test(self):
+            with db_session() as session:
+                # setup
+                session.query(Nicoru).delete()
+                session.commit()
 
-        def test_found_3(self):
-            self.get(nicorus=[
-                TestData.VIDEO_ID_1,
-                TestData.VIDEO_ID_2,
-            ], videos=[
-            ], expected=[
-                TestData.VIDEO_ID_1,
-                TestData.VIDEO_ID_2,
-            ])
+                dao = NicoruDAO(session)
+                dao.nicoru(TestData.VIDEO_ID_1, TestData.COMMENT_ID_1)
+                dao.nicoru(TestData.VIDEO_ID_1, TestData.COMMENT_ID_2)
+                dao.nicoru(TestData.VIDEO_ID_1, TestData.COMMENT_ID_3)
+                session.commit()
+
+                # run
+                dao.update_status(TestData.VIDEO_ID_1,
+                                  comment_ids=[TestData.COMMENT_ID_1, TestData.COMMENT_ID_2],
+                                  completed_comment_ids=[TestData.COMMENT_ID_1])
+                session.commit()
+
+                # verify
+                stored = session.query(Nicoru).filter(
+                    Nicoru.video_id == TestData.VIDEO_ID_1
+                ).order_by(Nicoru.video_id, Nicoru.comment_id).all()  # type: List[Nicoru]
+                assert stored[0].video_id == TestData.VIDEO_ID_1
+                assert stored[0].comment_id == TestData.COMMENT_ID_1
+                assert stored[0].nicoru == 1
+                assert stored[0].status == Nicoru.Status.HAS_REGULAR_COMMENT_DATA.value
+                assert stored[1].video_id == TestData.VIDEO_ID_1
+                assert stored[1].comment_id == TestData.COMMENT_ID_2
+                assert stored[1].nicoru == 1
+                assert stored[1].status == Nicoru.Status.HAS_NO_REGULAR_COMMENT_DATA.value
+                assert stored[2].video_id == TestData.VIDEO_ID_1
+                assert stored[2].comment_id == TestData.COMMENT_ID_3
+                assert stored[2].nicoru == 1
+                assert stored[2].status == Nicoru.Status.NEW.value

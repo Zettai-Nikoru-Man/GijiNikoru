@@ -8,6 +8,7 @@ class TestData:
     VIDEO_ID_3 = 'sm893'
     COMMENT_ID_1 = '1'
     COMMENT_ID_2 = '2'
+    COMMENT_ID_3 = '3'
     COMMENTED_AT_1 = '2014/08/11'
     COMMENTED_AT_2 = '2018/08/12'
     COMMENTED_POINT_1 = '8:10'

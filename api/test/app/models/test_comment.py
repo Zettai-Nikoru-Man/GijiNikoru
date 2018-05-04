@@ -29,6 +29,7 @@ class TestCommentDAO:
             with db_session() as session:
                 # setup
                 session.query(Comment).delete()
+                session.commit()
                 dao = CommentDAO(session)
 
                 # run
@@ -41,8 +42,8 @@ class TestCommentDAO:
                     point=TestData.Comment.POINT_1,
                     was_deleted=TestData.Comment.WAS_DELETED_1,
                     original_nicorare=TestData.Comment.ORIGINAL_NICORARE_1,
-                    updated_at=TestData.Comment.UPDATED_AT_1,
                 )
+                session.commit()
 
                 # verify
                 assert new == dao.find(TestData.COMMENT_ID_1, TestData.VIDEO_ID_1)
@@ -52,6 +53,8 @@ class TestCommentDAO:
             with db_session() as session:
                 # setup
                 session.query(Comment).delete()
+                session.commit()
+
                 dao = CommentDAO(session)
                 new = dao.add(
                     id=TestData.COMMENT_ID_1,
@@ -62,8 +65,8 @@ class TestCommentDAO:
                     point=TestData.Comment.POINT_1,
                     was_deleted=TestData.Comment.WAS_DELETED_1,
                     original_nicorare=TestData.Comment.ORIGINAL_NICORARE_1,
-                    updated_at=TestData.Comment.UPDATED_AT_1,
                 )
+                session.commit()
 
                 # run
                 stored = dao.find(TestData.COMMENT_ID_1, TestData.VIDEO_ID_1)

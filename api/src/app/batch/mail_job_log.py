@@ -32,7 +32,7 @@ class JobLogMailer:
 
         :return: Tuple consists of video and comment job log
         """
-        with db_session(commit=False) as session:
+        with db_session() as session:
             dao = JobLogDAO(session)
             v = dao.find_by_type(JobLogType.VIDEO)  # 動画ジョブログ取得
             c = dao.find_by_type(JobLogType.COMMENT)  # コメントジョブログ取得
@@ -66,7 +66,3 @@ class JobLogMailer:
                           ]))
             mail.send(msg)
             logger.info('sent mail')
-
-
-if __name__ == '__main__':
-    JobLogMailer.mail(Constants.Mail.SENDER, Constants.Mail.RECIPIENTS)

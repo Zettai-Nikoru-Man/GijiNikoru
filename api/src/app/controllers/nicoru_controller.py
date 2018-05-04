@@ -5,7 +5,7 @@ from src.app.helpers.db_helper import db_session
 from src.app.models.nicoru import NicoruDAO
 
 
-class Nicoru(Resource):
+class NicoruController(Resource):
     def get(self, video_id: str):
         """get nicoru of video by comment ids.
 
@@ -16,25 +16,20 @@ class Nicoru(Resource):
         """
         with db_session() as session:
             dao = NicoruDAO(session)
-            return dao.find_by_video_id(video_id)
+            return dao.get_nicoru_for_video(video_id)
 
     def put(self, video_id: str):
-        """ニコる要求を受信し、DB を更新します。
-
-        当該コメントが既にニコられている場合、ニコられ数に 1 を加えます。
-        そうでなければ、当該コメントのニコられ数を 1 にします。
+        """receive nicoru request, update db
 
         :param video_id: 動画 ID
-        :return:
+        :return: status
         """
         data = request.json
         with db_session() as session:
             dao = NicoruDAO(session)
-            dao.add_or_update(
+            dao.nicoru(
                 video_id,
                 data.get('cid'),
-                data.get('ca'),
-                data.get('cp')
             )
             return {
                 'status': 'ok',

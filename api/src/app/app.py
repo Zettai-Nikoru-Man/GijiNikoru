@@ -2,7 +2,7 @@ from flask import Flask
 from flask_migrate import Migrate
 from flask_restful import Api
 
-from src.app.controllers.nicoru import Nicoru
+from src.app.controllers.nicoru_controller import NicoruController
 from src.app.models import configured_db
 from src.app.util.gn_logger import GNLogger
 
@@ -19,4 +19,4 @@ migrate = Migrate(application, configured_db)
 
 # api
 api = Api(application)
-api.add_resource(Nicoru, '/nicoru/<string:video_id>')
+api.add_resource(NicoruController, '/nicoru/<string:video_id>')

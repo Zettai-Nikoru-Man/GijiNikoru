@@ -15,17 +15,18 @@ configured_db.init_app(app)
 
 
 @contextlib.contextmanager
-def db_session(commit: bool = True):
+def db_session():
     with app.app_context():
         session = configured_db.session  # type: Session
         try:
             yield session
-            if commit:
+            if session:
                 session.commit()
         except Exception as e:
             logger.exception(e)
-            if commit:
+            if session:
                 session.rollback()
             raise e
         finally:
-            session.close()
+            if session:
+                session.close()

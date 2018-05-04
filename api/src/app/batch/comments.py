@@ -6,22 +6,7 @@ from src.app.batch.comment import Comment
 class Comments:
     """コメントAPI返却値クラス"""
 
-    def __init__(self, condition, api_result):
-        if not api_result:
-            raise Exception("コメントの取得に失敗しました。")
-        thread = api_result[0]["thread"]
-
-        # スレッド
-        self.thread = thread["thread"]
-        # チケット
-        self.ticket = thread.get("ticket")
-        # 動画情報
-        self.video_info = condition["video_info"]
-        # コメント投稿日時
-        self.commented_at = condition["commented_at"]
-        # コメント投稿動画内時点
-        self.commented_point = condition["commented_point"]
-
+    def __init__(self, api_result):
         count = 0
         comments = []
         for data in api_result:

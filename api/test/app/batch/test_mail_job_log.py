@@ -10,6 +10,7 @@ class TestJobLogMailer:
             with db_session() as session:
                 dao = JobLogDAO(session)
                 dao.add_or_update(JobLogType.VIDEO, JobLogStatus.DONE)
+                session.commit()
                 dao.add_or_update(JobLogType.COMMENT, JobLogStatus.DONE)
                 session.commit()
             result = JobLogMailer.get_job_log()
@@ -24,6 +25,7 @@ class TestJobLogMailer:
             with db_session() as session:
                 dao = JobLogDAO(session)
                 dao.add_or_update(JobLogType.VIDEO, JobLogStatus.DONE)
+                session.commit()
                 dao.add_or_update(JobLogType.COMMENT, JobLogStatus.DONE)
                 session.commit()
             JobLogMailer.mail(Constants.Mail.SENDER, Constants.Mail.RECIPIENTS)

@@ -21,6 +21,7 @@ class TestJobLogDAO:
             with db_session() as session:
                 # setup
                 session.query(JobLog).delete()
+                session.commit()
                 # run
                 record = JobLogDAO(session).find_by_type(JobLogType.VIDEO)
                 # verify
@@ -30,10 +31,12 @@ class TestJobLogDAO:
             with db_session() as session:
                 # setup
                 session.query(JobLog).delete()
+                session.commit()
                 new = JobLog()
                 new.type = JobLogType.VIDEO
                 new.status = JobLogStatus.DONE
                 session.add(new)
+                session.commit()
                 # run
                 record = JobLogDAO(session).find_by_type(JobLogType.VIDEO)
                 # verify
@@ -45,6 +48,7 @@ class TestJobLogDAO:
             with db_session() as session:
                 # setup
                 session.query(JobLog).delete()
+                session.commit()
                 before = datetime.now()
                 # run
                 record = JobLogDAO(session).add_or_update(JobLogType.VIDEO, JobLogStatus.DONE)
@@ -58,9 +62,11 @@ class TestJobLogDAO:
             with db_session() as session:
                 # setup
                 session.query(JobLog).delete()
+                session.commit()
                 before = datetime.now()
                 dao = JobLogDAO(session)
                 dao.add_or_update(JobLogType.VIDEO, JobLogStatus.ABORTED)
+                session.commit()
                 # run
                 record = dao.add_or_update(JobLogType.VIDEO, JobLogStatus.DONE)
                 # verify

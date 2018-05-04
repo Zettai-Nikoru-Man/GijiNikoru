@@ -39,9 +39,8 @@ def upgrade():
     op.create_table('nicoru',
     sa.Column('video_id', sa.String(length=100), nullable=False),
     sa.Column('comment_id', sa.String(length=100), nullable=False),
-    sa.Column('nikorare', sa.Integer(), nullable=True),
-    sa.Column('commented_at', sa.String(length=20), nullable=True),
-    sa.Column('commented_point', sa.String(length=10), nullable=True),
+    sa.Column('nicoru', sa.Integer(), nullable=True),
+    sa.Column('status', sa.SmallInteger(), nullable=True),
     sa.PrimaryKeyConstraint('video_id', 'comment_id')
     )
     op.create_table('video',

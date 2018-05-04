@@ -25,6 +25,7 @@ class TestVideoDAO:
             with db_session() as session:
                 # setup
                 session.query(Video).delete()
+                session.commit()
                 dao = VideoDAO(session)
 
                 # run
@@ -37,8 +38,8 @@ class TestVideoDAO:
                     watch_url=TestData.Video.WATCH_URL_1,
                     posted_by=TestData.Video.POSTED_BY_1,
                     posted_by_name=TestData.Video.POSTED_BY_NAME_1,
-                    updated_at=TestData.Video.UPDATED_AT_1,
                 )
+                session.commit()
 
                 # verify
                 assert new.id == TestData.VIDEO_ID_1
@@ -49,7 +50,6 @@ class TestVideoDAO:
                 assert new.watch_url == TestData.Video.WATCH_URL_1
                 assert new.posted_by == TestData.Video.POSTED_BY_1
                 assert new.posted_by_name == TestData.Video.POSTED_BY_NAME_1
-                assert new.updated_at == TestData.Video.UPDATED_AT_1
                 stored = dao.find(TestData.VIDEO_ID_1)
                 assert stored.id == TestData.VIDEO_ID_1
                 assert stored.title == TestData.Video.TITLE_1
@@ -59,4 +59,3 @@ class TestVideoDAO:
                 assert stored.watch_url == TestData.Video.WATCH_URL_1
                 assert stored.posted_by == TestData.Video.POSTED_BY_1
                 assert stored.posted_by_name == TestData.Video.POSTED_BY_NAME_1
-                assert stored.updated_at == TestData.Video.UPDATED_AT_1
