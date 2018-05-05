@@ -27,21 +27,20 @@ class IncompleteCommentDataGetter:
         COMMENT_DATA_NOT_FOUND = 3
 
     @classmethod
-    def execute(cls):
-        logger.info('start')
+    def execute(cls) -> int:
         with db_session() as session:
             try:
                 dao = JobLogDAO(session)
                 job_log = dao.find_by_type(JobLogType.COMMENT)
 
                 if job_log and job_log.status == JobLogStatus.RUNNING:
-                    logger.warning('failed to start. previous process has not done.')
-                    return cls.ReturnCode.PREVIOUS_PROCESS_IS_RUNNING
+                    if (datetime.now() - job_log.updated_at).seconds < 100:
+                        return cls.ReturnCode.PREVIOUS_PROCESS_IS_RUNNING
+                        # if previous job log is running but old, assume that process was aborted and continue this one.
 
                 n_dao = NicoruDAO(session)
                 video_id, comment_ids = n_dao.find_incomplete_comment_records()
                 if not video_id or not comment_ids:
-                    logger.info('there is no incomplete comment.')
                     return cls.ReturnCode.NO_INCOMPLETE_DATA
 
                 dao.add_or_update(JobLogType.COMMENT, JobLogStatus.RUNNING)
@@ -69,8 +68,13 @@ class IncompleteCommentDataGetter:
                                                     original_nicorare=comment.old_nicoru)
                             completed_comment_ids.append(comment.id)
                             break
-                n_dao.update_status(video_id, comment_ids, completed_comment_ids)
+                n_dao.update_status_for_comment(video_id, comment_ids, completed_comment_ids)
+                session.commit()
+
                 dao.add_or_update(JobLogType.COMMENT, JobLogStatus.DONE)
+                session.commit()
+
+                logger.info('added v:{}, c:{}'.format(video_id, completed_comment_ids))
                 return cls.ReturnCode.SUCCESS
 
             except Exception:

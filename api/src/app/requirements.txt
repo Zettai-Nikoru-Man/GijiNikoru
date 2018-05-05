@@ -2,8 +2,10 @@ flask-restful
 flask-sqlalchemy
 flask-migrate
 flask-mail
+flask-cors
 mysqlclient
 uwsgi
 pytest
 pytest-cov
 requests
+schedule

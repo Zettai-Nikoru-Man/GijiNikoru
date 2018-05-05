@@ -47,3 +47,6 @@ alias dc-test-all-cov=run_pytest_all_with_coverage
 
 # Run Python module
 alias dc-py=dc_func_run_python_module
+
+# Refresh chrome extension
+alias dc-refresh-chrome-extension=dc_func_refresh_chrome_extension

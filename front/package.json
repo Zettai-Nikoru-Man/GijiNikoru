@@ -1,0 +1,29 @@
+{
+  "name": "gijinikoru",
+  "version": "1.0.0",
+  "description": "Giji tekina Nikoru.",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zettai-Nikoru-Man/GijiNikoru.git"
+  },
+  "scripts": {
+    "bundle": "rollup -c",
+    "lint": "eslint src chromeExtension --fix"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Zettai-Nikoru-Man/GijiNikoru/issues"
+  },
+  "devDependencies": {
+    "eslint": "^4.5.0",
+    "loglevel": "^1.4.1",
+    "ms": "^2.0.0",
+    "pify": "^3.0.0",
+    "rollup": "^0.50.0",
+    "rollup-plugin-commonjs": "^8.2.0",
+    "rollup-plugin-node-resolve": "^3.0.0",
+    "wait-for-element": "^1.0.2",
+    "date-fns": "^2.0.0-alpha.7"
+  }
+}

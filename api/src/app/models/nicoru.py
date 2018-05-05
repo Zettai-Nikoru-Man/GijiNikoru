@@ -1,22 +1,23 @@
-from enum import Enum
+import enum
 from typing import Optional, List, Tuple
 
 from src.app.models.dao_base import DAOBase
 from src.app.models.shared import db
 
 
+class NicoruStatus(enum.Enum):
+    NEW = 0
+    HAS_REGULAR_COMMENT_DATA = 1
+    HAS_NO_REGULAR_COMMENT_DATA = -1
+
+
 class Nicoru(db.Model):
     """擬似ニコる情報"""
-
-    class Status(Enum):
-        NEW = 0
-        HAS_REGULAR_COMMENT_DATA = 1
-        HAS_NO_REGULAR_COMMENT_DATA = -1
 
     video_id = db.Column(db.String(100), primary_key=True)
     comment_id = db.Column(db.String(100), primary_key=True)
     nicoru = db.Column(db.Integer)
-    status = db.Column(db.SmallInteger)
+    status = db.Column(db.Enum(NicoruStatus), nullable=False)
 
     def __repr__(self):
         return '<Nicoru {}-{}>'.format(self.video_id, self.comment_id)
@@ -24,20 +25,30 @@ class Nicoru(db.Model):
 
 class NicoruDAO(DAOBase):
     class Query:
+        FIND_INCOMPLETE_VIDEO_IDS = """
+SELECT n.video_id
+FROM nicoru n
+WHERE NOT EXISTS (
+  SELECT *
+  FROM irregular_video_id ivi
+  WHERE video_id = n.video_id
+)
+AND NOT EXISTS (
+  SELECT *
+  FROM video v
+  WHERE v.id = n.video_id
+)
+        """
         FIND_INCOMPLETE_COMMENT_RECORDS = """
-SELECT n2.video_id, n2.comment_id
-FROM nicoru n2
-INNER JOIN (
-  SELECT n.video_id, COUNT(1) AS cnt
-  FROM nicoru n
-  INNER JOIN video v
-    ON n.video_id = v.id
-  WHERE n.status = {}
-  GROUP BY n.video_id
-  ORDER BY cnt DESC
-  LIMIT 1) s
-ON n2.video_id = s.video_id
-        """.format(Nicoru.Status.NEW.value)
+SELECT n.video_id, n.comment_id
+FROM nicoru n
+WHERE n.status = '{}'
+AND EXISTS (
+  SELECT *
+  FROM video v
+  WHERE v.id = n.video_id
+)
+        """.format(NicoruStatus.NEW.name)
 
     def get_nicoru_for_video(self, video_id: str) -> dict:
         records = self.session.query(Nicoru).filter(Nicoru.video_id == video_id).all()  # type: List[Nicoru]
@@ -50,8 +61,8 @@ ON n2.video_id = s.video_id
         ).first()
 
     def find_incomplete_video_id(self) -> Optional[str]:
-        stored = self.session.query(Nicoru).filter(Nicoru.status == Nicoru.Status.NEW.value).first()
-        return stored.video_id if stored else None
+        stored = self.session.execute(NicoruDAO.Query.FIND_INCOMPLETE_VIDEO_IDS).fetchone()
+        return stored[0] if stored else None
 
     def find_incomplete_comment_records(self) -> Tuple[Optional[str], Optional[List[str]]]:
         records = self.session.execute(NicoruDAO.Query.FIND_INCOMPLETE_COMMENT_RECORDS).fetchall()
@@ -66,26 +77,22 @@ ON n2.video_id = s.video_id
         stored.nicoru += 1
         return stored
 
-    def update_status(self, video_id: str, comment_ids: List[str], completed_comment_ids: List[str]):
+    def update_status_for_comment(self, video_id: str, comment_ids: List[str], completed_comment_ids: List[str]):
         nicorus = self.session.query(Nicoru).filter(
             Nicoru.video_id == video_id,
             Nicoru.comment_id.in_(comment_ids)).all()
 
         for nicoru in nicorus:
             if nicoru.comment_id in completed_comment_ids:
-                nicoru.status = Nicoru.Status.HAS_REGULAR_COMMENT_DATA.value
+                nicoru.status = NicoruStatus.HAS_REGULAR_COMMENT_DATA
             else:
-                nicoru.status = Nicoru.Status.HAS_NO_REGULAR_COMMENT_DATA.value
-
-    def delete(self, video_id: str):
-        """delete records seems to be illegal"""
-        self.session.query(Nicoru.comment_id, Nicoru.nicoru).filter(Nicoru.video_id == video_id).delete()
+                nicoru.status = NicoruStatus.HAS_NO_REGULAR_COMMENT_DATA
 
     def __add(self, video_id: str, comment_id: str) -> Nicoru:
         nicoru = Nicoru()
         nicoru.video_id = video_id
         nicoru.comment_id = comment_id
         nicoru.nicoru = 1
-        nicoru.status = Nicoru.Status.NEW.value
+        nicoru.status = NicoruStatus.NEW
         self.session.add(nicoru)
         return nicoru

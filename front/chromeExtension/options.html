@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<title>擬似ニコる設定ページ</title>
+		<style>
+			.optionItem {
+				margin-bottom: 10px;
+			}
+			.buttons {
+				margin-bottom: 10px;
+			}
+			button {
+				width: 150px;
+			}
+			.status {
+				height: 20px;
+			}
+			#status {
+				vertical-align: middle;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="optionItem">
+			<label>
+				<input type="checkbox" id="seekByDoubleClick">
+				コメントリストのコメントをダブルクリックした際、動画をシークする
+			</label>
+		</div>
+
+		<!--
+			<div class="optionItem">
+				<label>
+					<input type="checkbox" id="stopScrollByMouseOver">
+					コメントリストにカーソルを乗せた際、スクロールを停止する
+				</label>
+			</div>
+		-->
+
+		<div class="buttons">
+			<button id="default">デフォルトに戻す</button>
+			<button id="save">保存</button>
+		</div>
+		<div class="status">
+			<span id="status" hidden>保存しました</span>
+		</div>
+
+		<script src="options.js"></script>
+	</body>
+</html>

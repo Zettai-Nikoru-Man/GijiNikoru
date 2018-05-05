@@ -1,3 +1,0 @@
-from src.app.batch.get_incomplete_comment_data import IncompleteCommentDataGetter
-
-IncompleteCommentDataGetter.execute()

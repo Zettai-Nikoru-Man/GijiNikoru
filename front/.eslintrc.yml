@@ -1,0 +1,22 @@
+parserOptions:
+  ecmaVersion: 2017
+  sourceType: module
+rules:
+  indent:
+    - error
+    - tab
+  linebreak-style:
+    - error
+    - unix
+  no-trailing-spaces: error
+  quotes:
+    - error
+    - double
+env:
+  browser: true
+  es6: true
+  node: true
+globals:
+  chrome: true
+extends: "eslint:recommended"
+

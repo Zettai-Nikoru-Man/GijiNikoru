@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_restful import Api
 
@@ -10,6 +11,7 @@ logger = GNLogger.get_logger(__name__)
 
 # app
 application = Flask(__name__)
+CORS(application)
 
 # db
 application.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@db/nicoru'

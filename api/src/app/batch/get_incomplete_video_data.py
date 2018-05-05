@@ -3,6 +3,7 @@ from time import sleep
 
 from src.app.batch.niconico_api_connector import NiconicoAPIConnector, VideoDataGetError
 from src.app.helpers.db_helper import db_session
+from src.app.models.irregular_video_id import IrregularVideoIdDAO
 from src.app.models.job_log import JobLogDAO, JobLogStatus, JobLogType
 from src.app.models.nicoru import NicoruDAO
 from src.app.models.video import VideoDAO
@@ -23,20 +24,20 @@ class IncompleteVideoDataGetter:
         VIDEO_DATA_NOT_FOUND = 3
 
     @classmethod
-    def execute(cls):
-        logger.info('start')
+    def execute(cls) -> int:
         with db_session() as session:
             try:
                 dao = JobLogDAO(session)
                 job_log = dao.find_by_type(JobLogType.VIDEO)
 
                 if job_log and job_log.status == JobLogStatus.RUNNING:
-                    logger.warning('failed to start. previous process has not done.')
-                    return cls.ReturnCode.PREVIOUS_PROCESS_IS_RUNNING
+                    if (datetime.now() - job_log.updated_at).seconds < 100:
+                        return cls.ReturnCode.PREVIOUS_PROCESS_IS_RUNNING
+                        # if previous job log is running but old, assume that process was aborted and continue this one.
 
                 incomplete_video_id = NicoruDAO(session).find_incomplete_video_id()
                 if not incomplete_video_id:
-                    logger.info('there is no incomplete video.')
+                    logger.debug('there is no incomplete video.')
                     return cls.ReturnCode.NO_INCOMPLETE_DATA
 
                 dao.add_or_update(JobLogType.VIDEO, JobLogStatus.RUNNING)
@@ -55,7 +56,7 @@ class IncompleteVideoDataGetter:
                     video_info = api_connector.get_video_info(incomplete_video_id)
                     video_api_info = api_connector.get_video_api_info(incomplete_video_id)
                 except VideoDataGetError:
-                    NicoruDAO(session).delete(incomplete_video_id)
+                    IrregularVideoIdDAO(session).add(incomplete_video_id)
                     raise
 
                 v_dao = VideoDAO(session)
@@ -69,8 +70,11 @@ class IncompleteVideoDataGetter:
                     posted_by=video_info.author_user_id,
                     posted_by_name=video_info.author_nickname,
                 )
+                session.commit()
 
                 dao.add_or_update(JobLogType.VIDEO, JobLogStatus.DONE)
+                session.commit()
+                logger.info('added v:{}'.format(video_info.video_id))
                 return cls.ReturnCode.SUCCESS
 
             except Exception:

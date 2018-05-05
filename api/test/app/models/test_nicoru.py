@@ -2,7 +2,7 @@ from typing import List, Tuple, Optional
 
 from src.app.helpers.db_helper import db_session
 from src.app.models import Video
-from src.app.models.nicoru import Nicoru, NicoruDAO
+from src.app.models.nicoru import Nicoru, NicoruDAO, NicoruStatus
 from src.app.models.video import VideoDAO
 from test.app.models.data import TestData
 
@@ -105,7 +105,7 @@ class TestNicoruDAO:
                 for vid, cid, is_completed in nicorus:
                     added = dao.nicoru(video_id=vid, comment_id=cid)
                     if is_completed:
-                        added.status = Nicoru.Status.HAS_REGULAR_COMMENT_DATA.value
+                        added.status = NicoruStatus.HAS_REGULAR_COMMENT_DATA
 
                 session.commit()
 
@@ -179,7 +179,7 @@ class TestNicoruDAO:
 
                 for vid in completed_video_ids:
                     record = dao.find_by_video_id_and_comment_id(vid, TestData.COMMENT_ID_1)
-                    record.status = Nicoru.Status.HAS_REGULAR_COMMENT_DATA.value
+                    record.status = NicoruStatus.HAS_REGULAR_COMMENT_DATA
 
                 session.commit()
 
@@ -208,7 +208,7 @@ class TestNicoruDAO:
             ], completed_video_ids=[
             ], expected=TestData.VIDEO_ID_1)
 
-    class Test_update_status:
+    class Test_update_status_for_comment:
         def test(self):
             with db_session() as session:
                 # setup
@@ -222,7 +222,7 @@ class TestNicoruDAO:
                 session.commit()
 
                 # run
-                dao.update_status(TestData.VIDEO_ID_1,
+                dao.update_status_for_comment(TestData.VIDEO_ID_1,
                                   comment_ids=[TestData.COMMENT_ID_1, TestData.COMMENT_ID_2],
                                   completed_comment_ids=[TestData.COMMENT_ID_1])
                 session.commit()
@@ -234,12 +234,12 @@ class TestNicoruDAO:
                 assert stored[0].video_id == TestData.VIDEO_ID_1
                 assert stored[0].comment_id == TestData.COMMENT_ID_1
                 assert stored[0].nicoru == 1
-                assert stored[0].status == Nicoru.Status.HAS_REGULAR_COMMENT_DATA.value
+                assert stored[0].status == NicoruStatus.HAS_REGULAR_COMMENT_DATA
                 assert stored[1].video_id == TestData.VIDEO_ID_1
                 assert stored[1].comment_id == TestData.COMMENT_ID_2
                 assert stored[1].nicoru == 1
-                assert stored[1].status == Nicoru.Status.HAS_NO_REGULAR_COMMENT_DATA.value
+                assert stored[1].status == NicoruStatus.HAS_NO_REGULAR_COMMENT_DATA
                 assert stored[2].video_id == TestData.VIDEO_ID_1
                 assert stored[2].comment_id == TestData.COMMENT_ID_3
                 assert stored[2].nicoru == 1
-                assert stored[2].status == Nicoru.Status.NEW.value
+                assert stored[2].status == NicoruStatus.NEW

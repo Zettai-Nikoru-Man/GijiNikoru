@@ -6,3 +6,11 @@ db/data
 **/__pycache__
 **/.coverage
 **/.pytest_cache
+api_tmp/*
+
+/chromeExtension.zip
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+front/chromeExtension/**/*.map

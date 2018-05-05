@@ -1,0 +1,51 @@
+/**
+ * 総ニコる表示用ニコるくん画像
+ */
+#nikoruKun_total {
+    width: 18px;
+    height: 18px;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+/**
+ * ツールチップ
+ */
+.nikoruTooltip {
+    position: fixed;
+    width: 36px;
+    height: 21px;
+    padding-left: 3px;
+    box-sizing: border-box;
+    background-image: var(--gijinikoru-background);
+    background-size: contain;
+    z-index: 114514;
+    font: initial;
+    font-size: 13px;
+    line-height: 21px;
+    text-align: center;
+    filter: drop-shadow(0px 0px 3px #616161);
+}
+
+/**
+ * ツールチップ上のニコるくん画像（今回ニコられていないもの）
+ */
+.nikoruTooltip::before {
+    content: "";
+    display: inline-block;
+    position: absolute;
+    left: -24px;
+    width: 21px;
+    height: 21px;
+    background-image: var(--gijinikoru-nikorukun-tate);
+    background-size: contain;
+    transition: transform .5s, filter .5s;
+}
+
+/**
+ * ツールチップ上のニコるくん画像（今回ニコられ、無効となったもの）
+ */
+.nikoruTooltip[data-disabled=true]::before {
+    transform: rotate(-90deg);
+    filter: grayscale(1);
+}

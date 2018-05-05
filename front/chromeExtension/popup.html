@@ -1,0 +1,46 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <style>
+        body {
+            width: 300px;
+            height: 300px;
+        }
+
+        ul {
+            padding-left: 20px;
+            list-style-type: none;
+        }
+
+        #nicorareta_form {
+            position: relative;
+            width: 100%;
+        }
+
+        #view_nicorareta_button {
+            position: absolute;
+            left: 0;
+            right: 0;
+            margin: auto;
+            width: 150px;
+        }
+
+        #error_nicorareta {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+<ul>
+    <li>
+        <!-- ニコられたフォーム -->
+        <div id="nicorareta_form">
+            <button id="view_nicorareta_button" type="button">ニコられた</button>
+            <br/>
+            <p id="error_nicorareta"></p>
+        </div>
+    </li>
+</ul>
+</body>
+<script src="popup.js"></script>
+</html>

@@ -10,13 +10,13 @@ class GNLogger:
                     time=self.formatTime(record, self.datefmt),
                     level=record.levelname,
                     pid=record.process,
-                    logger_name=record.name,
+                    logger_name=record.pathname,
                     lineno=record.lineno,
                     msg=record.getMessage())
 
         DEV = {
             'version': 1,
-            'disable_existing_loggers': False,
+            'disable_existing_loggers': True,
             'formatters': {
                 'standard': {
                     '()': GNFormatter
@@ -24,15 +24,24 @@ class GNLogger:
             },
             'handlers': {
                 'default': {
-                    'level': 'DEBUG',
+                    'level': 'INFO',
                     'formatter': 'standard',
                     'class': 'logging.StreamHandler',
+                },
+                'file': {
+                    'level': 'INFO',
+                    'formatter': 'standard',
+                    'class': 'logging.handlers.RotatingFileHandler',
+                    'filename': '/tmp/giji_nikoru/gn.log',
+                    'mode': 'a',
+                    'maxBytes': 10485760,
+                    'backupCount': 5,
                 },
             },
             'loggers': {
                 '': {
-                    'handlers': ['default'],
-                    'level': 'DEBUG',
+                    'handlers': ['default', 'file'],
+                    'level': 'INFO',
                     'propagate': True
                 },
             }

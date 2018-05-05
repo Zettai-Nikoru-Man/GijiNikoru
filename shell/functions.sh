@@ -44,3 +44,9 @@ function run_pytest_all_with_coverage() {
 function dc_func_run_python_module() {
     docker-compose exec api python $1
 }
+
+function dc_func_refresh_chrome_extension() {
+    docker-compose exec front yarn install --pure-lockfile
+    docker-compose exec front npm run lint
+    docker-compose exec front npm run bundle
+}

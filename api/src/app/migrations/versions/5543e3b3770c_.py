@@ -40,7 +40,7 @@ def upgrade():
     sa.Column('video_id', sa.String(length=100), nullable=False),
     sa.Column('comment_id', sa.String(length=100), nullable=False),
     sa.Column('nicoru', sa.Integer(), nullable=True),
-    sa.Column('status', sa.SmallInteger(), nullable=True),
+    sa.Column('status', sa.Enum('NEW', 'HAS_REGULAR_COMMENT_DATA', 'HAS_NO_REGULAR_COMMENT_DATA', name='nicorustatus'), nullable=False),
     sa.PrimaryKeyConstraint('video_id', 'comment_id')
     )
     op.create_table('video',
@@ -55,6 +55,10 @@ def upgrade():
     sa.Column('updated_at', sa.TIMESTAMP(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('irregular_video_id',
+    sa.Column('video_id', sa.String(length=100), nullable=False),
+    sa.PrimaryKeyConstraint('video_id')
+    )
     # ### end Alembic commands ###
 
 
@@ -64,4 +68,5 @@ def downgrade():
     op.drop_table('nicoru')
     op.drop_table('job_log')
     op.drop_table('comment')
+    op.drop_table('irregular_video_id')
     # ### end Alembic commands ###

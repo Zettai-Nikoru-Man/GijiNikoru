@@ -11,6 +11,7 @@ services:
     volumes:
       - "./api/src/app:/usr/src/app"
       - "./api/test/app:/usr/test/app"
+      - "./api_tmp:/tmp/giji_nikoru"
       - api:/tmp
     environment:
       - PYTHONPATH=/usr
@@ -24,6 +25,12 @@ services:
       - "80:80"
     volumes:
       - api:/tmp
+
+  # Chrome extension Maker
+  front:
+    build: front
+    volumes:
+      - "./front:/usr/src/app"
 
   # DB server
   db:
