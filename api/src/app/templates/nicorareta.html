@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja" class="font_family__basic">
+<head>
+    <meta charset="UTF-8">
+    <title>ニコられた</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<ul style="margin-top: 30px; list-style-type: none;">
+    {% for record in records %}
+        <li class="nikoru_item">
+            <div class="nikoru_main_pane" id="nikoru_main_pane__{{ loop.index0 }}" style="height: 70px;">
+                {% set comment_length = record[2]|length %}
+                <div class="comment" style="font-size: {{ '2.5em' if comment_length <= 12 else ('1.8em' if comment_length <= 25 else '1.2em')}};">
+                    {{ record[2] }}
+                </div>
+                <div class="nikorare_count">
+                    <span style="font-size: 1.8em;">{{ record[0] }}</span>
+                    <br/>ニコられ
+                </div>
+            </div>
+            <div style="clear: both;"></div>
+            <div style="width: 100%; text-align: center;">
+                <span style="display: none;" id="up-arrow__{{ loop.index0 }}">▲</span>
+                <span id="down-arrow__{{ loop.index0 }}">▼</span>
+            </div>
+            <div id="nikoru_sub_pane__{{ loop.index0 }}" style="width: 100%; height: 50px; display: none;">
+                <div style="float: left;">
+                    <a target="_blank" href="{{ record[6] }}"><img src="{{ record[5] }}" class="nikoru_thumbnail"/></a>
+                </div>
+                <div style="margin-top: 8px; margin-left: 10px; float: left; vertical-align: middle;">
+                    <a target="_blank" href="{{ record[6] }}">{{ record[4] }}</a>
+                </div>
+            </div>
+        </li>
+    {% endfor %}
+</ul>
+<script>
+    function init() {
+        const nikoruMainPanes = document.getElementsByClassName("nikoru_main_pane");
+        for (let i = 0, len = nikoruMainPanes.length; i < len; i++) {
+            const item = nikoruMainPanes[i];
+            item.addEventListener('click', function () {
+                toggleSubPane(i);
+            }, false);
+        }
+    }
+
+    function toggleSubPane(index) {
+        const subPane = document.getElementById(`nikoru_sub_pane__${index}`);
+        const downArrow = document.getElementById(`down-arrow__${index}`);
+        const upArrow = document.getElementById(`up-arrow__${index}`);
+        if (subPane.style.display === "none") {
+            // サブペイン表示
+            subPane.style.display = "block";
+            downArrow.style.display = "none";
+            upArrow.style.display = "block";
+            return;
+        }
+        // サブペイン非表示
+        subPane.style.display = "none";
+        downArrow.style.display = "block";
+        upArrow.style.display = "none";
+    }
+    init();
+</script>
+</body>
+</html>

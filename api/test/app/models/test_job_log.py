@@ -1,8 +1,8 @@
 from datetime import datetime
 
-from src.app.helpers.db_helper import db_session
 from src.app.models.job_log import JobLog, JobLogType, JobLogDAO
 from src.app.models.job_log import JobLogStatus
+from test.app.db_test_helper import db_test_session
 
 
 class TestJobLog:
@@ -18,20 +18,15 @@ class TestJobLog:
 class TestJobLogDAO:
     class Test_find_video_type:
         def test_get_no_record(self):
-            with db_session() as session:
-                # setup
-                session.query(JobLog).delete()
-                session.commit()
+            with db_test_session() as session:
                 # run
                 record = JobLogDAO(session).find_by_type(JobLogType.VIDEO)
                 # verify
                 assert record is None
 
         def test_get_one_record(self):
-            with db_session() as session:
+            with db_test_session() as session:
                 # setup
-                session.query(JobLog).delete()
-                session.commit()
                 new = JobLog()
                 new.type = JobLogType.VIDEO
                 new.status = JobLogStatus.DONE
@@ -45,10 +40,8 @@ class TestJobLogDAO:
 
     class Test_add_or_update:
         def test_add(self):
-            with db_session() as session:
+            with db_test_session() as session:
                 # setup
-                session.query(JobLog).delete()
-                session.commit()
                 before = datetime.now()
                 # run
                 record = JobLogDAO(session).add_or_update(JobLogType.VIDEO, JobLogStatus.DONE)
@@ -59,10 +52,8 @@ class TestJobLogDAO:
                 assert after > record.updated_at > before
 
         def test_update(self):
-            with db_session() as session:
+            with db_test_session() as session:
                 # setup
-                session.query(JobLog).delete()
-                session.commit()
                 before = datetime.now()
                 dao = JobLogDAO(session)
                 dao.add_or_update(JobLogType.VIDEO, JobLogStatus.ABORTED)

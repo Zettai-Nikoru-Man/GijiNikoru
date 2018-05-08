@@ -292,8 +292,8 @@ function execNikoru(e) {
 	log.debug("ニコる情報を送信中…", {movieId: mid, commentId: commentId});
 	fetch(settings.POST_URL + mid, {
 		headers: {
-		  "Accept": "application/json",
-		  "Content-Type": "application/json"
+			"Accept": "application/json",
+			"Content-Type": "application/json"
 		},
 		method: "PUT",
 		body: JSON.stringify({

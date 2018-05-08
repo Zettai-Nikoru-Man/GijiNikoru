@@ -15,7 +15,7 @@ async function onNicoraretaButtonClick() {
 		$("#error_nicorareta").innerText = "ユーザIDの取得に失敗しました。ログイン状態で動画ページにアクセスしてから、もう一度試してください。";
 		return;
 	}
-	window.open(`${settings.NICORARETA_PAGE_URL}?user_id=${userId}`, "_blank");
+	window.open(`${settings.NICORARETA_PAGE_URL}${userId}`, "_blank");
 }
 
 // オプションを取得する

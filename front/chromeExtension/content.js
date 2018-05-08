@@ -282,7 +282,7 @@ const settings = {
 settings.POST_URL = `http://${settings.API_HOST}/nicoru/`;
 
 // ニコられたページ
-settings.NICORARETA_PAGE_URL = `http://${settings.API_HOST}/viewNikorareta.php`;
+settings.NICORARETA_PAGE_URL = `http://${settings.API_HOST}/page/nicorareta/`;
 
 // LICENSE : MIT
 "use strict";
@@ -1401,8 +1401,8 @@ function execNikoru(e) {
 	loglevel.debug("ニコる情報を送信中…", {movieId: mid, commentId: commentId});
 	fetch(settings.POST_URL + mid, {
 		headers: {
-		  "Accept": "application/json",
-		  "Content-Type": "application/json"
+			"Accept": "application/json",
+			"Content-Type": "application/json"
 		},
 		method: "PUT",
 		body: JSON.stringify({

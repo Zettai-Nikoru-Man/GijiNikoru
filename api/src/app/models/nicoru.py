@@ -1,6 +1,9 @@
 import enum
 from typing import Optional, List, Tuple
 
+from sqlalchemy import text
+from sqlalchemy.engine import ResultProxy
+
 from src.app.models.dao_base import DAOBase
 from src.app.models.shared import db
 
@@ -50,6 +53,26 @@ AND EXISTS (
 )
         """.format(NicoruStatus.NEW.name)
 
+        GET_NICORARETA_DATA = """
+SELECT
+  n.nicoru,
+  n.video_id,
+  c.text,
+  DATE_FORMAT(c.posted_at, '%Y/%m/%d %H:%i:%s'),
+  v.title,
+  v.thumbnail,
+  v.watch_url
+FROM nicoru n
+INNER JOIN comment c
+  ON n.video_id = c.video_id
+  AND n.comment_id = c.id
+INNER JOIN video v
+  ON n.video_id = v.id
+WHERE c.posted_by = :user_id
+ORDER BY
+  c.posted_at DESC
+        """
+
     def get_nicoru_for_video(self, video_id: str) -> dict:
         records = self.session.query(Nicoru).filter(Nicoru.video_id == video_id).all()  # type: List[Nicoru]
         return {record.comment_id: record.nicoru for record in records}
@@ -87,6 +110,13 @@ AND EXISTS (
                 nicoru.status = NicoruStatus.HAS_REGULAR_COMMENT_DATA
             else:
                 nicoru.status = NicoruStatus.HAS_NO_REGULAR_COMMENT_DATA
+
+    def get_nicorareta(self, user_id: str) -> List[tuple]:
+        records = self.session.execute(text(NicoruDAO.Query.GET_NICORARETA_DATA),
+                                       {'user_id': user_id}).fetchall()  # type: ResultProxy
+        if not records:
+            return []
+        return [tuple(record) for record in records]
 
     def __add(self, video_id: str, comment_id: str) -> Nicoru:
         nicoru = Nicoru()

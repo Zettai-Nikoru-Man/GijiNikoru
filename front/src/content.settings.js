@@ -24,6 +24,6 @@ const settings = {
 settings.POST_URL = `http://${settings.API_HOST}/nicoru/`;
 
 // ニコられたページ
-settings.NICORARETA_PAGE_URL = `http://${settings.API_HOST}/viewNikorareta.php`;
+settings.NICORARETA_PAGE_URL = `http://${settings.API_HOST}/page/nicorareta/`;
 
 export default settings;

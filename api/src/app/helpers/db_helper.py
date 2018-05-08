@@ -1,4 +1,5 @@
 import contextlib
+import traceback
 
 from flask import Flask
 from sqlalchemy.orm import Session
@@ -24,6 +25,7 @@ def db_session():
                 session.commit()
         except Exception as e:
             logger.exception(e)
+            traceback.print_exc()
             if session:
                 session.rollback()
             raise e

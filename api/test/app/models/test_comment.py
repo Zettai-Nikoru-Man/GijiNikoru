@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from src.app.helpers.db_helper import db_session
 from src.app.models.comment import Comment, CommentDAO
+from test.app.db_test_helper import db_test_session
 from test.app.models.data import TestData
 
 
@@ -15,24 +15,12 @@ class TestComment:
 
 class TestCommentDAO:
     ID_1 = '1'
-    VIDEO_ID_1 = 'sm114514'
-    TEXT_1 = 'ここすき'
-    POSTED_AT_1 = datetime.now()
-    POSTED_BY_1 = '512810'
-    POINT_1 = '8:10'
-    WAS_DELETED_1 = True
-    ORIGINAL_NICORARE_1 = 1
-    UPDATED_AT_1 = datetime.now()
 
     class Test_add:
         def test(self):
-            with db_session() as session:
-                # setup
-                session.query(Comment).delete()
-                session.commit()
-                dao = CommentDAO(session)
-
+            with db_test_session() as session:
                 # run
+                dao = CommentDAO(session)
                 new = dao.add(
                     id=TestData.COMMENT_ID_1,
                     video_id=TestData.VIDEO_ID_1,
@@ -50,11 +38,8 @@ class TestCommentDAO:
 
     class Test_find:
         def test(self):
-            with db_session() as session:
+            with db_test_session() as session:
                 # setup
-                session.query(Comment).delete()
-                session.commit()
-
                 dao = CommentDAO(session)
                 new = dao.add(
                     id=TestData.COMMENT_ID_1,
