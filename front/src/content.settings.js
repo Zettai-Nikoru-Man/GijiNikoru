@@ -2,7 +2,7 @@ import log from "loglevel";
 
 const settings = {
 	// APIホスト名
-	API_HOST: "localhost",
+	API_HOST: "tk2-240-29723.vs.sakura.ne.jp",
 
 	// ログレベル指定
 	logLevel: log.levels.SILENT,
