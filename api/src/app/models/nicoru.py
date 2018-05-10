@@ -78,7 +78,7 @@ ORDER BY
         return {record.comment_id: record.nicoru for record in records}
 
     def find_by_video_id_and_comment_id(self, video_id: str, comment_id: str) -> Optional[Nicoru]:
-        return self.session.query(Nicoru).filter(
+        return self.session.query(Nicoru).with_lockmode('update').filter(
             Nicoru.video_id == video_id,
             Nicoru.comment_id == comment_id
         ).first()

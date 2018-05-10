@@ -50,3 +50,9 @@ alias dc-py=dc_func_run_python_module
 
 # Refresh chrome extension
 alias dc-refresh-chrome-extension=dc_func_refresh_chrome_extension
+
+# Apache bench test get nicoru
+alias dc-ab-get-nicoru=dc_func_ab_get_nicoru
+
+# Apache bench test put nicoru
+alias dc-ab-put-nicoru=dc_func_ab_put_nicoru

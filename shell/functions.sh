@@ -5,7 +5,7 @@ function test_get_nicoru() {
 }
 
 function test_put_nicoru() {
-    curl -XPUT http://0.0.0.0/nicoru/$1 -H "Content-Type: application/json" -d "{\"cid\":\"$2\", \"ca\":\"$3\", \"cp\":\"$4\"}"
+    curl -XPUT http://0.0.0.0/nicoru/$1 -H "Content-Type: application/json" -d "{\"cid\":\"$2\"}"
 }
 
 function test_gn() {
@@ -21,7 +21,7 @@ function test_gn() {
         echo 'put'
         if [[ $2 == 'ni' ]]; then
             echo 'nicoru'
-            test_put_nicoru $3 $4 $5 $6
+            test_put_nicoru $3 $4
             return
         fi
         return
@@ -49,4 +49,14 @@ function dc_func_refresh_chrome_extension() {
     docker-compose exec front yarn install --pure-lockfile
     docker-compose exec front npm run lint
     docker-compose exec front npm run bundle
+}
+
+# usage: dc_func_ab_get_nicoru -c 100 -n 1000 -v 4
+function dc_func_ab_get_nicoru() {
+    docker-compose exec api ab "$@" web/nicoru/1
+}
+
+# usage: dc_func_ab_put_nicoru -c 100 -n 1000 -v 4
+function dc_func_ab_put_nicoru() {
+    docker-compose exec api ab -p /usr/test/app/data/data.json -m PUT -T application/json "$@" web/nicoru/1
 }

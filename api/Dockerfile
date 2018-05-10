@@ -4,7 +4,7 @@ WORKDIR /usr/src/app
 
 # Setup basic tools
 RUN apt-get update && \
-	apt-get install -y git vim mysql-client
+	apt-get install -y git vim mysql-client apache2-utils
 
 # Set files
 ADD .bashrc .
