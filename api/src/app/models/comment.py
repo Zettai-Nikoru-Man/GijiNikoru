@@ -16,7 +16,7 @@ class Comment(db.Model):
     posted_by = db.Column(db.String(100))
     point = db.Column(db.String(10))
     was_deleted = db.Column(db.Boolean)
-    original_nicorare = db.Column(INTEGER(unsigned=True))
+    official_nicoru = db.Column(INTEGER(unsigned=True))
     updated_at = db.Column(db.TIMESTAMP, default=datetime.now, onupdate=datetime.now, nullable=False)
 
     def __repr__(self):
@@ -32,7 +32,7 @@ class CommentDAO(DAOBase):
             posted_by: str,
             point: str,
             was_deleted: bool,
-            original_nicorare: int):
+            official_nicoru: int):
         comment = Comment()
         comment.id = id
         comment.video_id = video_id
@@ -41,7 +41,7 @@ class CommentDAO(DAOBase):
         comment.posted_by = posted_by
         comment.point = point
         comment.was_deleted = was_deleted
-        comment.original_nicorare = original_nicorare
+        comment.official_nicoru = official_nicoru
         comment.updated_at = datetime.now()
         self.session.add(comment)
         return comment

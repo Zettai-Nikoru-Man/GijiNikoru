@@ -1,6 +1,9 @@
 import logging
 from logging.config import dictConfig
 
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+
 
 class GNLogger:
     class Config:

@@ -4,7 +4,7 @@ WORKDIR /usr/src/app
 
 # Setup basic tools
 RUN apt-get update && \
-	apt-get install -y git vim mysql-client apache2-utils
+	apt-get install -y git vim mysql-client apache2-utils zip
 
 # Set files
 ADD .bashrc .
@@ -17,9 +17,6 @@ RUN pip install -r requirements.txt
 # Set timezone
 RUN cp /etc/localtime /etc/localtime.org && \
     ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
-
-# Make directory
-RUN mkdir -p /tmp/giji_nikoru
 
 # Set uwsgi
 ADD src/app/uwsgi/uwsgi.ini /usr/src/app/uwsgi/

@@ -5,10 +5,11 @@ RUN mkdir -p /home/user
 
 ADD nginx.conf /home/user/nginx.conf
 ADD uwsgi_params /home/user/uwsgi_params
+ADD init.sh /home/user/init.sh
 
 ENV TZ Asia/Tokyo
 RUN echo "--- Set timezone" && \
     ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata
 
-CMD /usr/sbin/nginx -g "daemon off;" -c /home/user/nginx.conf
+CMD /home/user/init.sh

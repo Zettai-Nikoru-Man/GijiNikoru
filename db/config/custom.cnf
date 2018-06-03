@@ -1,5 +1,7 @@
 [mysqld]
 character-set-server=utf8mb4
+default-time-zone = 'Asia/Tokyo'
+secure-file-priv=""
 
 [client]
 default-character-set=utf8mb4

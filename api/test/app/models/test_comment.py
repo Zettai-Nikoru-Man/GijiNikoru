@@ -29,7 +29,7 @@ class TestCommentDAO:
                     posted_by=TestData.Comment.POSTED_BY_1,
                     point=TestData.Comment.POINT_1,
                     was_deleted=TestData.Comment.WAS_DELETED_1,
-                    original_nicorare=TestData.Comment.ORIGINAL_NICORARE_1,
+                    official_nicoru=TestData.Comment.OFFICIAL_NICORU_1,
                 )
                 session.commit()
 
@@ -49,7 +49,7 @@ class TestCommentDAO:
                     posted_by=TestData.Comment.POSTED_BY_1,
                     point=TestData.Comment.POINT_1,
                     was_deleted=TestData.Comment.WAS_DELETED_1,
-                    original_nicorare=TestData.Comment.ORIGINAL_NICORARE_1,
+                    official_nicoru=TestData.Comment.OFFICIAL_NICORU_1,
                 )
                 session.commit()
 

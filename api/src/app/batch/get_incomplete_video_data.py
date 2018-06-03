@@ -1,8 +1,7 @@
-from datetime import datetime
-from time import sleep
+from sqlalchemy.orm import Session
 
+from src.app.batch.get_incomplete_data import IncompleteDataGetter
 from src.app.batch.niconico_api_connector import NiconicoAPIConnector, VideoDataGetError
-from src.app.helpers.db_helper import db_session
 from src.app.models.irregular_video_id import IrregularVideoIdDAO
 from src.app.models.job_log import JobLogDAO, JobLogStatus, JobLogType
 from src.app.models.nicoru import NicoruDAO
@@ -12,72 +11,45 @@ from src.app.util.gn_logger import GNLogger
 logger = GNLogger.get_logger(__name__)
 
 
-class IncompleteVideoDataGetter:
+class IncompleteVideoDataGetter(IncompleteDataGetter):
     """Get video info from niconico API"""
 
-    SPAN_SECOND = 10
-
-    class ReturnCode:
-        SUCCESS = 0
-        PREVIOUS_PROCESS_IS_RUNNING = 1
-        NO_INCOMPLETE_DATA = 2
-        VIDEO_DATA_NOT_FOUND = 3
+    TYPE = JobLogType.VIDEO
 
     @classmethod
-    def execute(cls) -> int:
-        with db_session() as session:
-            try:
-                dao = JobLogDAO(session)
-                job_log = dao.find_by_type(JobLogType.VIDEO)
+    def get_incomplete_data_key(cls, session: Session) -> str:
+        incomplete_video_id = NicoruDAO(session).find_incomplete_video_id()
+        if not incomplete_video_id:
+            raise IncompleteDataGetter.NoIncompleteDataError
+        return incomplete_video_id
 
-                if job_log and job_log.status == JobLogStatus.RUNNING:
-                    if (datetime.now() - job_log.updated_at).seconds < 100:
-                        return cls.ReturnCode.PREVIOUS_PROCESS_IS_RUNNING
-                        # if previous job log is running but old, assume that process was aborted and continue this one.
+    @classmethod
+    def get_and_register_data(cls, session: Session, incomplete_data_key: str):
+        api_connector = NiconicoAPIConnector()
+        incomplete_video_id = incomplete_data_key
+        try:
+            video_info = api_connector.get_video_info(incomplete_video_id)
+            video_api_info = api_connector.get_video_api_info(incomplete_video_id)
+        except VideoDataGetError:
+            IrregularVideoIdDAO(session).add(incomplete_video_id)
+            JobLogDAO(session).add_or_update(JobLogType.VIDEO, JobLogStatus.ABORTED)
+            session.commit()
+            raise
 
-                incomplete_video_id = NicoruDAO(session).find_incomplete_video_id()
-                if not incomplete_video_id:
-                    logger.debug('there is no incomplete video.')
-                    return cls.ReturnCode.NO_INCOMPLETE_DATA
+        v_dao = VideoDAO(session)
+        if v_dao.find(video_info.video_id):
+            # case of "My Memory". e.g. sm1158689 and 1200835239(My Memory of sm1158689)
+            # niconico API returns video id(sm1158689) when asking for My Memory id(1200835239).
+            # this causes PK error of video table. so here replace returned video id with My Memory video id.
+            video_info.video_id = incomplete_video_id
 
-                dao.add_or_update(JobLogType.VIDEO, JobLogStatus.RUNNING)
-                session.commit()
-
-                # wait to run next process
-                if job_log:
-                    span = (datetime.now() - job_log.updated_at).seconds
-                    if span < cls.SPAN_SECOND:
-                        wait = cls.SPAN_SECOND - span
-                        logger.debug('waiting {} seconds. span: {}'.format(wait, span))
-                        sleep(wait)
-
-                api_connector = NiconicoAPIConnector()
-                try:
-                    video_info = api_connector.get_video_info(incomplete_video_id)
-                    video_api_info = api_connector.get_video_api_info(incomplete_video_id)
-                except VideoDataGetError:
-                    IrregularVideoIdDAO(session).add(incomplete_video_id)
-                    raise
-
-                v_dao = VideoDAO(session)
-                v_dao.add(
-                    id=video_info.video_id,
-                    thumbnail=video_info.thumbnail_url,
-                    posted_at=video_api_info.posted_at,
-                    length=video_info.length,
-                    title=video_info.title,
-                    watch_url=video_info.watch_url,
-                    posted_by=video_info.author_user_id,
-                    posted_by_name=video_info.author_nickname,
-                )
-                session.commit()
-
-                dao.add_or_update(JobLogType.VIDEO, JobLogStatus.DONE)
-                session.commit()
-                logger.info('added v:{}'.format(video_info.video_id))
-                return cls.ReturnCode.SUCCESS
-
-            except Exception:
-                with db_session() as session2:
-                    JobLogDAO(session2).add_or_update(JobLogType.VIDEO, JobLogStatus.ABORTED)
-                raise
+        v_dao.add(
+            id=video_info.video_id,
+            thumbnail=video_info.thumbnail_url,
+            posted_at=video_api_info.posted_at,
+            length=video_info.length,
+            title=video_info.title,
+            watch_url=video_info.watch_url,
+            posted_by=video_info.author_user_id,
+            posted_by_name=video_info.author_nickname,
+        )

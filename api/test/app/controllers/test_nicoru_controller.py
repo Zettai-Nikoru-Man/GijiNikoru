@@ -20,10 +20,18 @@ class TestNicoruController:
         def dummy_get_json(self, force=False, silent=False, cache=True):
             return {'cid': '1'}
 
-        def test(self):
+        def test_valid_input(self):
             with db_test_session() as session:
                 with application.test_request_context():
                     nicoru = NicoruController()
                     request.get_json = self.dummy_get_json
                     result = nicoru.put('sm9')
                     assert result == {'status': 'ok'}
+
+        def test_invalid_input(self):
+            with db_test_session() as session:
+                with application.test_request_context():
+                    nicoru = NicoruController()
+                    request.get_json = self.dummy_get_json
+                    result = nicoru.put('')
+                    assert result is None

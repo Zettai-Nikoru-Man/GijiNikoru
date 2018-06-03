@@ -2,10 +2,10 @@ import log from "loglevel";
 
 const settings = {
 	// APIホスト名
-	API_HOST: "tk2-240-29723.vs.sakura.ne.jp",
+	API_HOST: "localhost",
 
 	// ログレベル指定
-	logLevel: log.levels.SILENT,
+	logLevel: log.levels.INFO,
 
 	// 最大表示ニコられ数
 	maxDisplayNikorare: 999,

@@ -1,83 +1,61 @@
-from datetime import datetime
-from time import sleep
+from typing import Tuple, List
 
-from src.app.batch.niconico_api_connector import NiconicoAPIConnector
-from src.app.helpers.db_helper import db_session
+from sqlalchemy.orm import Session
+
+from src.app.batch.get_incomplete_data import IncompleteDataGetter
+from src.app.batch.niconico_api_connector import NiconicoAPIConnector, VideoDataGetError, CommentDataGetError
 from src.app.models.comment import CommentDAO
-from src.app.models.job_log import JobLogDAO, JobLogStatus, JobLogType
+from src.app.models.irregular_comment_id import IrregularCommentIdDAO
+from src.app.models.irregular_video_id import IrregularVideoIdDAO
+from src.app.models.job_log import JobLogType, JobLogDAO, JobLogStatus
 from src.app.models.nicoru import NicoruDAO
 from src.app.util.gn_logger import GNLogger
 
 logger = GNLogger.get_logger(__name__)
 
 
-class ProcessRunningError:
-    """Error represents previous process is running"""
-    pass
-
-
-class IncompleteCommentDataGetter:
+class IncompleteCommentDataGetter(IncompleteDataGetter):
     """Get comment info from niconico API"""
-    SPAN_SECOND = 10
 
-    class ReturnCode:
-        SUCCESS = 0
-        PREVIOUS_PROCESS_IS_RUNNING = 1
-        NO_INCOMPLETE_DATA = 2
-        COMMENT_DATA_NOT_FOUND = 3
+    TYPE = JobLogType.COMMENT
 
     @classmethod
-    def execute(cls) -> int:
-        with db_session() as session:
-            try:
-                dao = JobLogDAO(session)
-                job_log = dao.find_by_type(JobLogType.COMMENT)
+    def get_incomplete_data_key(cls, session: Session) -> Tuple[str, List[str]]:
+        n_dao = NicoruDAO(session)
+        video_id, comment_ids = n_dao.find_incomplete_comment_records()
+        if not video_id or not comment_ids:
+            raise IncompleteDataGetter.NoIncompleteDataError
+        return video_id, comment_ids
 
-                if job_log and job_log.status == JobLogStatus.RUNNING:
-                    if (datetime.now() - job_log.updated_at).seconds < 100:
-                        return cls.ReturnCode.PREVIOUS_PROCESS_IS_RUNNING
-                        # if previous job log is running but old, assume that process was aborted and continue this one.
+    @classmethod
+    def get_and_register_data(cls, session: Session, incomplete_data_key: Tuple[str, List[str]]):
+        target_video_id, target_comment_ids = incomplete_data_key
+        api_connector = NiconicoAPIConnector()
+        try:
+            comments = api_connector.get_comments(target_video_id)
+        except VideoDataGetError:
+            IrregularVideoIdDAO(session).add(target_video_id)
+            JobLogDAO(session).add_or_update(cls.TYPE, JobLogStatus.ABORTED)
+            session.commit()
+            raise
+        except CommentDataGetError:
+            IrregularCommentIdDAO(session).add(target_video_id, target_comment_ids)
+            JobLogDAO(session).add_or_update(cls.TYPE, JobLogStatus.ABORTED)
+            session.commit()
+            raise
 
-                n_dao = NicoruDAO(session)
-                video_id, comment_ids = n_dao.find_incomplete_comment_records()
-                if not video_id or not comment_ids:
-                    return cls.ReturnCode.NO_INCOMPLETE_DATA
-
-                dao.add_or_update(JobLogType.COMMENT, JobLogStatus.RUNNING)
-                session.commit()
-
-                # wait to run next process
-                if job_log:
-                    span = (datetime.now() - job_log.updated_at).seconds
-                    if span < cls.SPAN_SECOND:
-                        wait = cls.SPAN_SECOND - span
-                        logger.debug('waiting {} seconds. span: {}'.format(wait, span))
-                        sleep(wait)
-
-                # get latest comments
-                api_connector = NiconicoAPIConnector()
-                comments = api_connector.get_comments(video_id)
-
-                completed_comment_ids = []
-                for comment_id in comment_ids:
-                    for comment in comments.comments:
-                        if comment.id == comment_id:
-                            CommentDAO(session).add(id=comment.id, video_id=video_id, text=comment.text,
-                                                    posted_at=comment.posted_at, posted_by=comment.posted_by,
-                                                    point=comment.point, was_deleted=comment.was_deleted,
-                                                    original_nicorare=comment.old_nicoru)
-                            completed_comment_ids.append(comment.id)
-                            break
-                n_dao.update_status_for_comment(video_id, comment_ids, completed_comment_ids)
-                session.commit()
-
-                dao.add_or_update(JobLogType.COMMENT, JobLogStatus.DONE)
-                session.commit()
-
-                logger.info('added v:{}, c:{}'.format(video_id, completed_comment_ids))
-                return cls.ReturnCode.SUCCESS
-
-            except Exception:
-                with db_session() as session2:
-                    JobLogDAO(session2).add_or_update(JobLogType.COMMENT, JobLogStatus.ABORTED)
-                raise
+        completed_comment_ids = []
+        for target_comment_id in target_comment_ids:
+            for comment in comments.comments:
+                if comment.id in completed_comment_ids:
+                    # for case that comments has duplicate comments
+                    continue
+                if comment.id == target_comment_id:
+                    CommentDAO(session).add(id=comment.id, video_id=target_video_id, text=comment.text,
+                                            posted_at=comment.posted_at, posted_by=comment.posted_by,
+                                            point=comment.point, was_deleted=comment.was_deleted,
+                                            official_nicoru=comment.official_nicoru)
+                    completed_comment_ids.append(comment.id)
+                    break
+        IrregularCommentIdDAO(session).add(target_video_id,
+                                           [x for x in target_comment_ids if x not in completed_comment_ids])

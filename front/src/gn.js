@@ -21,6 +21,9 @@ import {
 
 const GN = {};
 let nikorizumiCIDList = []; // ニコり済みコメ番リスト
+let nikorichuCIDList = []; // （範囲ニコる用）ニコり中コメ番リスト
+let nikorichuRowList = []; // （範囲ニコる用）ニコり中行DOMリスト
+let nikorichu = false; // （範囲ニコる用）ニコり中か
 let mid = null; // 動画番号
 let myNimj = null; // NIJ
 let originalNimj = null; // 初期NIJ
@@ -158,6 +161,10 @@ async function onGotNimj(nimj) {
 		});
 	});
 
+	if (inHTML5PlayerPage) {
+		addRangeNicoru(gridCanvasDOM);
+	}
+
 	let config = {childList: true};
 	observer.observe(gridCanvasDOM, config); // コメント枠内部の監視を開始する
 
@@ -167,42 +174,6 @@ async function onGotNimj(nimj) {
 		: $$(":scope > .slick-row", gridCanvas);
 	canvasObserver(rowDOM);
 }
-
-// コメントマーク処理
-const markComment = async (e, comment, commentId, storage) => {
-
-	if (e.ctrlKey) {
-
-		// マーク済みコメントをストレージから取得して処理する
-		const items = await storage.get({"markedComment": {}});
-
-		// 動画IDに対応したマーク済みコメント情報を取得する
-		let markedComment = items["markedComment"][mid];
-
-		// 動画IDに対応したマーク済みコメントリストが保存されていなければ初期化する
-		if (markedComment == null) {
-			markedComment = [];
-		}
-
-		// 既にマーク済みであれば何もしない
-		if (markedComment.includes(commentId)) {
-			return;
-		}
-
-		markedComment.push(commentId);
-		items["markedComment"][mid] = markedComment;
-
-		// ストレージにコメント情報を保存する
-		storage.set({"markedComment": items["markedComment"]});
-
-		// TODO: 視覚効果
-
-		// 送信する
-		// $.post(`http://flapi.nicovideo.jp/api/getflv/sm26692123`, function(data, status) {
-		// 	console.log(300, data);
-		// }, "json");
-	}
-};
 
 // DOM変更時処理
 function canvasObserver(rows) {
@@ -246,12 +217,89 @@ function canvasObserver(rows) {
 		if (isNikorared === false) {
 			row.addEventListener("dblclick", execNikoru); // ニコるイベントハンドラを付加する
 
-			// コメントマーク用イベントハンドラを付加する
-			row.addEventListener("click", (e) => {
-				markComment(e, comment, commentId, storage)
+			row.addEventListener("dragstart", function(e) {
+				log.info("start", e);
+				// evt.dataTransfer.setData('Text', evt.target.id);
 			});
 		}
 	});
+}
+
+function addRangeNicoru(gridCanvasDOM) {
+	gridCanvasDOM.addEventListener("mousedown", (e) => {
+		nikorichuCIDList = [];
+		nikorichuRowList = [];
+		if (addRowForRangeNicoru(e) === true) {
+			nikorichu = true;
+		}
+	});
+	gridCanvasDOM.addEventListener("mousemove", (e) => {
+		if (!nikorichu) return;
+		addRowForRangeNicoru(e);
+	});
+	gridCanvasDOM.addEventListener("mouseup", (e) => {
+		if (!nikorichu) return;
+		addRowForRangeNicoru(e);
+		for (let i = 0, len = nikorichuCIDList.length; i < len; i++) {
+			execNikoruImpl(nikorichuRowList[i], nikorichuCIDList[i]);
+		}
+		nikorichu = false;
+		nikorichuCIDList = [];
+		nikorichuRowList = [];
+	});
+}
+
+function addRowForRangeNicoru(e) {
+	const row = getRowFromTarget(e);
+	if (!row) return;
+	const commentId = getCommentId(row, inHTML5PlayerPage);
+	if (nikorizumiCIDList.includes(commentId)) return;
+	if (nikorichuCIDList.includes(commentId)) return;
+	nikorichuCIDList.push(commentId);
+	nikorichuRowList.push(row);
+	return true;
+}
+
+function getRowFromTarget(e) {
+	const clickedElement = e.target;
+	const shouldProcess = inHTML5PlayerPage
+		? exists(".CommentPanelDataGrid-cell", clickedElement.parentElement)
+		: (clickedElement.classList.contains("slick-cell") && clickedElement.classList.contains("r0"));
+	if (shouldProcess === false) return;
+	return inHTML5PlayerPage
+		? clickedElement.closest("[role=row]")
+		: clickedElement.parentElement;
+}
+
+function execNikoruImpl(row, commentId) {
+	if (nikorizumiCIDList.includes(commentId)) return log.info("ニコり済コメントです。"); // ニコり済みの場合は終了
+	nikorizumiCIDList.push(commentId); // ニコり済みコメ番リストに追加する
+	log.info(row, commentId);
+	const rowTooltipStyle = getTooltipStyle(row);
+
+	// ニコるくんを灰色にする
+	rowTooltipStyle.disabled = true;
+	tooltip.update(row);
+
+	setTimeout(function () {
+		setRowStyle(row, inHTML5PlayerPage, originalNimj, nikorizumiCIDList); // 今回のニコりを加味してスタイルを更新する
+		// ニコられた数を更新
+		rowTooltipStyle.content = getRealNikorare(commentId, originalNimj, nikorizumiCIDList);
+		tooltip.update(row);
+	}, ms("0.5s"));
+
+	// 送信する
+	log.debug("ニコる情報を送信中…", {movieId: mid, commentId: commentId});
+	fetch(settings.POST_URL + mid, {
+		headers: {
+			"Accept": "application/json",
+			"Content-Type": "application/json"
+		},
+		method: "PUT",
+		body: JSON.stringify({
+			cid: commentId
+		}),
+	}).then(() => log.debug("ニコる情報の送信に成功しました。"));
 }
 
 // ニコる実行

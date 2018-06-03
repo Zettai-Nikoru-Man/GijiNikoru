@@ -260,10 +260,10 @@ var loglevel = createCommonjsModule(function (module) {
 
 const settings = {
 	// APIホスト名
-	API_HOST: "tk2-240-29723.vs.sakura.ne.jp",
+	API_HOST: "localhost",
 
 	// ログレベル指定
-	logLevel: loglevel.levels.SILENT,
+	logLevel: loglevel.levels.INFO,
 
 	// 最大表示ニコられ数
 	maxDisplayNikorare: 999,
@@ -571,227 +571,6 @@ module.exports = (obj, opts) => {
 	return ret;
 };
 });
-
-var tokensToBeShortedPattern = /MMMM|MM|DD|dddd/g;
-
-function buildShortLongFormat (format) {
-  return format.replace(tokensToBeShortedPattern, function (token) {
-    return token.slice(1)
-  })
-}
-
-/**
- * @name buildFormatLongFn
- * @category Locale Helpers
- * @summary Build `formatLong` property for locale used by `format`, `formatRelative` and `parse` functions.
- *
- * @description
- * Build `formatLong` property for locale used by `format`, `formatRelative` and `parse` functions.
- * Returns a function which takes one of the following tokens as the argument:
- * `'LTS'`, `'LT'`, `'L'`, `'LL'`, `'LLL'`, `'l'`, `'ll'`, `'lll'`, `'llll'`
- * and returns a long format string written as `format` token strings.
- * See [format]{@link https://date-fns.org/docs/format}
- *
- * `'l'`, `'ll'`, `'lll'` and `'llll'` formats are built automatically
- * by shortening some of the tokens from corresponding unshortened formats
- * (e.g., if `LL` is `'MMMM DD YYYY'` then `ll` will be `MMM D YYYY`)
- *
- * @param {Object} obj - the object with long formats written as `format` token strings
- * @param {String} obj.LT - time format: hours and minutes
- * @param {String} obj.LTS - time format: hours, minutes and seconds
- * @param {String} obj.L - short date format: numeric day, month and year
- * @param {String} [obj.l] - short date format: numeric day, month and year (shortened)
- * @param {String} obj.LL - long date format: day, month in words, and year
- * @param {String} [obj.ll] - long date format: day, month in words, and year (shortened)
- * @param {String} obj.LLL - long date and time format
- * @param {String} [obj.lll] - long date and time format (shortened)
- * @param {String} obj.LLLL - long date, time and weekday format
- * @param {String} [obj.llll] - long date, time and weekday format (shortened)
- * @returns {Function} `formatLong` property of the locale
- *
- * @example
- * // For `en-US` locale:
- * locale.formatLong = buildFormatLongFn({
- *   LT: 'h:mm aa',
- *   LTS: 'h:mm:ss aa',
- *   L: 'MM/DD/YYYY',
- *   LL: 'MMMM D YYYY',
- *   LLL: 'MMMM D YYYY h:mm aa',
- *   LLLL: 'dddd, MMMM D YYYY h:mm aa'
- * })
- */
-function buildFormatLongFn (obj) {
-  var formatLongLocale = {
-    LTS: obj.LTS,
-    LT: obj.LT,
-    L: obj.L,
-    LL: obj.LL,
-    LLL: obj.LLL,
-    LLLL: obj.LLLL,
-    l: obj.l || buildShortLongFormat(obj.L),
-    ll: obj.ll || buildShortLongFormat(obj.LL),
-    lll: obj.lll || buildShortLongFormat(obj.LLL),
-    llll: obj.llll || buildShortLongFormat(obj.LLLL)
-  };
-
-  return function (token) {
-    return formatLongLocale[token]
-  }
-}
-
-var formatLong = buildFormatLongFn({
-  LT: 'h:mm aa',
-  LTS: 'h:mm:ss aa',
-  L: 'MM/DD/YYYY',
-  LL: 'MMMM D YYYY',
-  LLL: 'MMMM D YYYY h:mm aa',
-  LLLL: 'dddd, MMMM D YYYY h:mm aa'
-});
-
-/**
- * @name buildLocalizeFn
- * @category Locale Helpers
- * @summary Build `localize.weekday`, `localize.month` and `localize.timeOfDay` properties for the locale.
- *
- * @description
- * Build `localize.weekday`, `localize.month` and `localize.timeOfDay` properties for the locale
- * used by `format` function.
- * If no `type` is supplied to the options of the resulting function, `defaultType` will be used (see example).
- *
- * `localize.weekday` function takes the weekday index as argument (0 - Sunday).
- * `localize.month` takes the month index (0 - January).
- * `localize.timeOfDay` takes the hours. Use `indexCallback` to convert them to an array index (see example).
- *
- * @param {Object} values - the object with arrays of values
- * @param {String} defaultType - the default type for the localize function
- * @param {Function} [indexCallback] - the callback which takes the resulting function argument
- *   and converts it into value array index
- * @returns {Function} the resulting function
- *
- * @example
- * var timeOfDayValues = {
- *   uppercase: ['AM', 'PM'],
- *   lowercase: ['am', 'pm'],
- *   long: ['a.m.', 'p.m.']
- * }
- * locale.localize.timeOfDay = buildLocalizeFn(timeOfDayValues, 'long', function (hours) {
- *   // 0 is a.m. array index, 1 is p.m. array index
- *   return (hours / 12) >= 1 ? 1 : 0
- * })
- * locale.localize.timeOfDay(16, {type: 'uppercase'}) //=> 'PM'
- * locale.localize.timeOfDay(5) //=> 'a.m.'
- */
-
-/**
- * @name buildLocalizeArrayFn
- * @category Locale Helpers
- * @summary Build `localize.weekdays`, `localize.months` and `localize.timesOfDay` properties for the locale.
- *
- * @description
- * Build `localize.weekdays`, `localize.months` and `localize.timesOfDay` properties for the locale.
- * If no `type` is supplied to the options of the resulting function, `defaultType` will be used (see example).
- *
- * @param {Object} values - the object with arrays of values
- * @param {String} defaultType - the default type for the localize function
- * @returns {Function} the resulting function
- *
- * @example
- * var weekdayValues = {
- *   narrow: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
- *   short: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
- *   long: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
- * }
- * locale.localize.weekdays = buildLocalizeArrayFn(weekdayValues, 'long')
- * locale.localize.weekdays({type: 'narrow'}) //=> ['Su', 'Mo', ...]
- * locale.localize.weekdays() //=> ['Sunday', 'Monday', ...]
- */
-
-/**
- * @name buildMatchFn
- * @category Locale Helpers
- * @summary Build `match.weekdays`, `match.months` and `match.timesOfDay` properties for the locale.
- *
- * @description
- * Build `match.weekdays`, `match.months` and `match.timesOfDay` properties for the locale used by `parse` function.
- * If no `type` is supplied to the options of the resulting function, `defaultType` will be used (see example).
- * The result of the match function will be passed into corresponding parser function
- * (`match.weekday`, `match.month` or `match.timeOfDay` respectively. See `buildParseFn`).
- *
- * @param {Object} values - the object with RegExps
- * @param {String} defaultType - the default type for the match function
- * @returns {Function} the resulting function
- *
- * @example
- * var matchWeekdaysPatterns = {
- *   narrow: /^(su|mo|tu|we|th|fr|sa)/i,
- *   short: /^(sun|mon|tue|wed|thu|fri|sat)/i,
- *   long: /^(sunday|monday|tuesday|wednesday|thursday|friday|saturday)/i
- * }
- * locale.match.weekdays = buildMatchFn(matchWeekdaysPatterns, 'long')
- * locale.match.weekdays('Sunday', {type: 'narrow'}) //=> ['Su', 'Su', ...]
- * locale.match.weekdays('Sunday') //=> ['Sunday', 'Sunday', ...]
- */
-
-/**
- * @name buildParseFn
- * @category Locale Helpers
- * @summary Build `match.weekday`, `match.month` and `match.timeOfDay` properties for the locale.
- *
- * @description
- * Build `match.weekday`, `match.month` and `match.timeOfDay` properties for the locale used by `parse` function.
- * The argument of the resulting function is the result of the corresponding match function
- * (`match.weekdays`, `match.months` or `match.timesOfDay` respectively. See `buildMatchFn`).
- *
- * @param {Object} values - the object with arrays of RegExps
- * @param {String} defaultType - the default type for the parser function
- * @returns {Function} the resulting function
- *
- * @example
- * var parseWeekdayPatterns = {
- *   any: [/^su/i, /^m/i, /^tu/i, /^w/i, /^th/i, /^f/i, /^sa/i]
- * }
- * locale.match.weekday = buildParseFn(matchWeekdaysPatterns, 'long')
- * var matchResult = locale.match.weekdays('Friday')
- * locale.match.weekday(matchResult) //=> 5
- */
-
-/**
- * @name buildMatchPatternFn
- * @category Locale Helpers
- * @summary Build match function from a single RegExp.
- *
- * @description
- * Build match function from a single RegExp.
- * Usually used for building `match.ordinalNumbers` property of the locale.
- *
- * @param {Object} pattern - the RegExp
- * @returns {Function} the resulting function
- *
- * @example
- * locale.match.ordinalNumbers = buildMatchPatternFn(/^(\d+)(th|st|nd|rd)?/i)
- * locale.match.ordinalNumbers('3rd') //=> ['3rd', '3', 'rd', ...]
- */
-
-/**
- * @name parseDecimal
- * @category Locale Helpers
- * @summary Parses the match result into decimal number.
- *
- * @description
- * Parses the match result into decimal number.
- * Uses the string matched with the first set of parentheses of match RegExp.
- *
- * @param {Array} matchResult - the object returned by matching function
- * @returns {Number} the parsed value
- *
- * @example
- * locale.match = {
- *   ordinalNumbers: (dirtyString) {
- *     return String(dirtyString).match(/^(\d+)(th|st|nd|rd)?/i)
- *   },
- *   ordinalNumber: parseDecimal
- * }
- */
 
 /**
  * @param {string} selector
@@ -1130,6 +909,9 @@ class SingleTooltip {
 
 const GN = {};
 let nikorizumiCIDList = []; // ニコり済みコメ番リスト
+let nikorichuCIDList = []; // （範囲ニコる用）ニコり中コメ番リスト
+let nikorichuRowList = []; // （範囲ニコる用）ニコり中行DOMリスト
+let nikorichu = false; // （範囲ニコる用）ニコり中か
 let mid = null; // 動画番号
 let myNimj = null; // NIJ
 let originalNimj = null; // 初期NIJ
@@ -1267,6 +1049,10 @@ async function onGotNimj(nimj) {
 		});
 	});
 
+	if (inHTML5PlayerPage) {
+		addRangeNicoru(gridCanvasDOM);
+	}
+
 	let config = {childList: true};
 	observer.observe(gridCanvasDOM, config); // コメント枠内部の監視を開始する
 
@@ -1276,42 +1062,6 @@ async function onGotNimj(nimj) {
 		: $$(":scope > .slick-row", gridCanvas);
 	canvasObserver(rowDOM);
 }
-
-// コメントマーク処理
-const markComment = async (e, comment, commentId, storage) => {
-
-	if (e.ctrlKey) {
-
-		// マーク済みコメントをストレージから取得して処理する
-		const items = await storage.get({"markedComment": {}});
-
-		// 動画IDに対応したマーク済みコメント情報を取得する
-		let markedComment = items["markedComment"][mid];
-
-		// 動画IDに対応したマーク済みコメントリストが保存されていなければ初期化する
-		if (markedComment == null) {
-			markedComment = [];
-		}
-
-		// 既にマーク済みであれば何もしない
-		if (markedComment.includes(commentId)) {
-			return;
-		}
-
-		markedComment.push(commentId);
-		items["markedComment"][mid] = markedComment;
-
-		// ストレージにコメント情報を保存する
-		storage.set({"markedComment": items["markedComment"]});
-
-		// TODO: 視覚効果
-
-		// 送信する
-		// $.post(`http://flapi.nicovideo.jp/api/getflv/sm26692123`, function(data, status) {
-		// 	console.log(300, data);
-		// }, "json");
-	}
-};
 
 // DOM変更時処理
 function canvasObserver(rows) {
@@ -1355,12 +1105,89 @@ function canvasObserver(rows) {
 		if (isNikorared === false) {
 			row.addEventListener("dblclick", execNikoru); // ニコるイベントハンドラを付加する
 
-			// コメントマーク用イベントハンドラを付加する
-			row.addEventListener("click", (e) => {
-				markComment(e, comment, commentId, promisifiedStorage);
+			row.addEventListener("dragstart", function(e) {
+				loglevel.info("start", e);
+				// evt.dataTransfer.setData('Text', evt.target.id);
 			});
 		}
 	});
+}
+
+function addRangeNicoru(gridCanvasDOM) {
+	gridCanvasDOM.addEventListener("mousedown", (e) => {
+		nikorichuCIDList = [];
+		nikorichuRowList = [];
+		if (addRowForRangeNicoru(e) === true) {
+			nikorichu = true;
+		}
+	});
+	gridCanvasDOM.addEventListener("mousemove", (e) => {
+		if (!nikorichu) return;
+		addRowForRangeNicoru(e);
+	});
+	gridCanvasDOM.addEventListener("mouseup", (e) => {
+		if (!nikorichu) return;
+		addRowForRangeNicoru(e);
+		for (let i = 0, len = nikorichuCIDList.length; i < len; i++) {
+			execNikoruImpl(nikorichuRowList[i], nikorichuCIDList[i]);
+		}
+		nikorichu = false;
+		nikorichuCIDList = [];
+		nikorichuRowList = [];
+	});
+}
+
+function addRowForRangeNicoru(e) {
+	const row = getRowFromTarget(e);
+	if (!row) return;
+	const commentId = getCommentId(row, inHTML5PlayerPage);
+	if (nikorizumiCIDList.includes(commentId)) return;
+	if (nikorichuCIDList.includes(commentId)) return;
+	nikorichuCIDList.push(commentId);
+	nikorichuRowList.push(row);
+	return true;
+}
+
+function getRowFromTarget(e) {
+	const clickedElement = e.target;
+	const shouldProcess = inHTML5PlayerPage
+		? exists(".CommentPanelDataGrid-cell", clickedElement.parentElement)
+		: (clickedElement.classList.contains("slick-cell") && clickedElement.classList.contains("r0"));
+	if (shouldProcess === false) return;
+	return inHTML5PlayerPage
+		? clickedElement.closest("[role=row]")
+		: clickedElement.parentElement;
+}
+
+function execNikoruImpl(row, commentId) {
+	if (nikorizumiCIDList.includes(commentId)) return loglevel.info("ニコり済コメントです。"); // ニコり済みの場合は終了
+	nikorizumiCIDList.push(commentId); // ニコり済みコメ番リストに追加する
+	loglevel.info(row, commentId);
+	const rowTooltipStyle = getTooltipStyle(row);
+
+	// ニコるくんを灰色にする
+	rowTooltipStyle.disabled = true;
+	tooltip.update(row);
+
+	setTimeout(function () {
+		setRowStyle(row, inHTML5PlayerPage, originalNimj, nikorizumiCIDList); // 今回のニコりを加味してスタイルを更新する
+		// ニコられた数を更新
+		rowTooltipStyle.content = getRealNikorare(commentId, originalNimj, nikorizumiCIDList);
+		tooltip.update(row);
+	}, ms("0.5s"));
+
+	// 送信する
+	loglevel.debug("ニコる情報を送信中…", {movieId: mid, commentId: commentId});
+	fetch(settings.POST_URL + mid, {
+		headers: {
+			"Accept": "application/json",
+			"Content-Type": "application/json"
+		},
+		method: "PUT",
+		body: JSON.stringify({
+			cid: commentId
+		}),
+	}).then(() => loglevel.debug("ニコる情報の送信に成功しました。"));
 }
 
 // ニコる実行

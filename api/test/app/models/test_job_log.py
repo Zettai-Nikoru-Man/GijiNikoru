@@ -65,3 +65,20 @@ class TestJobLogDAO:
                 assert record.status == JobLogStatus.DONE
                 after = datetime.now()
                 assert after > record.updated_at > before
+
+    class Test_running_job_exists:
+        def test_not_found(self):
+            with db_test_session() as session:
+                # run, verify
+                dao = JobLogDAO(session)
+                assert not dao.running_job_exists()
+
+        def test_found(self):
+            with db_test_session() as session:
+                # setup
+                dao = JobLogDAO(session)
+                dao.add_or_update(JobLogType.VIDEO, JobLogStatus.RUNNING)
+                session.commit()
+
+                # run, verify
+                assert dao.running_job_exists()

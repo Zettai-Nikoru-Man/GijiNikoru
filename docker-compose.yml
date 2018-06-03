@@ -34,11 +34,13 @@ services:
 
   # DB server
   db:
-    image: mysql:5.6
+    build: db
     volumes:
       - "./db/config:/etc/mysql/conf.d"
       - "./db/init:/docker-entrypoint-initdb.d"
       - "./db/data:/var/lib/mysql"
+      - "./db/dump:/tmp/dump"
+      - "./db/input:/tmp/input"
     environment:
       - MYSQL_ROOT_PASSWORD=password
 

@@ -5,8 +5,8 @@ class TestConstants:
     class TestMail:
         assert Constants.Mail is not None
 
-    class TestApp:
-        assert Constants.App is not None
-
     class TestNiconico:
         assert Constants.Niconico is not None
+
+    class TestDropbox:
+        assert Constants.Dropbox is not None

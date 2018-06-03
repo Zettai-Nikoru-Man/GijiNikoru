@@ -3,6 +3,7 @@ from flask_restful import Resource
 
 from src.app.helpers.db_helper import db_session
 from src.app.models.nicoru import NicoruDAO
+from src.app.services.nicoru_service import NicoruService
 
 
 class NicoruController(Resource):
@@ -25,11 +26,15 @@ class NicoruController(Resource):
         :return: status
         """
         data = request.json
+        comment_id = data.get('cid')
+        if not NicoruService.post_input_is_valid(video_id, comment_id):
+            return
+
         with db_session() as session:
             dao = NicoruDAO(session)
             dao.nicoru(
                 video_id,
-                data.get('cid'),
+                comment_id,
             )
             return {
                 'status': 'ok',

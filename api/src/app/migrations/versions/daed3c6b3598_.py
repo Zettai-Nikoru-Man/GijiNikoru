@@ -1,8 +1,8 @@
-"""first version
+"""empty message
 
-Revision ID: 5543e3b3770c
+Revision ID: daed3c6b3598
 Revises: 
-Create Date: 2018-04-12 21:25:20.141556
+Create Date: 2018-05-19 19:40:57.298901
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import mysql
 
 # revision identifiers, used by Alembic.
-revision = '5543e3b3770c'
+revision = 'daed3c6b3598'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -26,12 +26,21 @@ def upgrade():
     sa.Column('posted_by', sa.String(length=100), nullable=True),
     sa.Column('point', sa.String(length=10), nullable=True),
     sa.Column('was_deleted', sa.Boolean(), nullable=True),
-    sa.Column('original_nicorare', mysql.INTEGER(unsigned=True), nullable=True),
+    sa.Column('official_nicoru', mysql.INTEGER(unsigned=True), nullable=True),
     sa.Column('updated_at', sa.TIMESTAMP(), nullable=False),
     sa.PrimaryKeyConstraint('id', 'video_id')
     )
+    op.create_table('irregular_video_id',
+    sa.Column('video_id', sa.String(length=100), nullable=False),
+    sa.PrimaryKeyConstraint('video_id')
+    )
+    op.create_table('irregular_comment_id',
+    sa.Column('video_id', sa.String(length=100), nullable=False),
+    sa.Column('comment_id', sa.String(length=100), nullable=False),
+    sa.PrimaryKeyConstraint('video_id', 'comment_id')
+    )
     op.create_table('job_log',
-    sa.Column('type', sa.Enum('VIDEO', 'COMMENT', name='joblogtype'), nullable=False),
+    sa.Column('type', sa.Enum('VIDEO', 'COMMENT', 'DB_DATA_EXPORT', 'UPLOAD_TO_STORAGE', name='joblogtype'), nullable=False),
     sa.Column('status', sa.Enum('ABORTED', 'RUNNING', 'DONE', name='joblogstatus'), nullable=True),
     sa.Column('updated_at', sa.TIMESTAMP(), nullable=False),
     sa.PrimaryKeyConstraint('type')
@@ -40,7 +49,6 @@ def upgrade():
     sa.Column('video_id', sa.String(length=100), nullable=False),
     sa.Column('comment_id', sa.String(length=100), nullable=False),
     sa.Column('nicoru', sa.Integer(), nullable=True),
-    sa.Column('status', sa.Enum('NEW', 'HAS_REGULAR_COMMENT_DATA', 'HAS_NO_REGULAR_COMMENT_DATA', name='nicorustatus'), nullable=False),
     sa.PrimaryKeyConstraint('video_id', 'comment_id')
     )
     op.create_table('video',
@@ -55,10 +63,6 @@ def upgrade():
     sa.Column('updated_at', sa.TIMESTAMP(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('irregular_video_id',
-    sa.Column('video_id', sa.String(length=100), nullable=False),
-    sa.PrimaryKeyConstraint('video_id')
-    )
     # ### end Alembic commands ###
 
 
@@ -67,6 +71,7 @@ def downgrade():
     op.drop_table('video')
     op.drop_table('nicoru')
     op.drop_table('job_log')
-    op.drop_table('comment')
     op.drop_table('irregular_video_id')
+    op.drop_table('irregular_comment_id')
+    op.drop_table('comment')
     # ### end Alembic commands ###

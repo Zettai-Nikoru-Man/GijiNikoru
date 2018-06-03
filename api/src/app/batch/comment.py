@@ -20,8 +20,8 @@ class Comment:
         self.posted_at = datetime.fromtimestamp(comment_object["date"])
         # コメントが投稿された動画内時点
         self.point = Util.translate_seconds_to_video_time_point(comment_object["vpos"] / 100)
-        # 旧ニコられ数
-        self.old_nicoru = int(comment_object.get("nicoru", 0))
+        # 公式ニコられ数
+        self.official_nicoru = int(comment_object.get("nicoru", 0))
         # 削除されているか
         self.was_deleted = bool(comment_object.get("deleted"))
         # コメント内容

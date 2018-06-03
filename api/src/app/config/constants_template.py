@@ -12,9 +12,10 @@ class Constants:
             ""
         ]
 
-    class App:
-        ROOT = __file__.replace("config/constants.py", "")
-
     class Niconico:
         LOGIN_ID = ""  # Your niconico login id
         PASSWORD = ""  # Your niconico login password
+
+    class Dropbox:
+        """Dropbox"""
+        ACCESS_TOKEN = ""  # Your dropbox api access token

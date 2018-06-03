@@ -44,6 +44,8 @@ class NiconicoAPIConnector:
             data = result.json()
             assert data
             return Comments(data)
+        except VideoDataGetError:
+            raise
         except:
             raise CommentDataGetError
 
