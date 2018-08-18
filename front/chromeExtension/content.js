@@ -642,14 +642,14 @@ async function setVideoTotalNikoru(inHTML5PlayerPage, myNimj) {
 	const videoTotalNikoru_commaSeparated = videoTotalNikoru.toLocaleString("ja-JP");
 
 	// 合計ニコられ数表示枠がまだ存在しない場合は追加する
-	if (!exists("#nikoruKun_total")) {
+	if (!exists("#gijinikoru_nikoruKun_total")) {
 		const target = inHTML5PlayerPage
 			? ".CommentCountMeta-counter"
 			: ".videoStatsComment";
 		const targetElement = await waitByObserver(target, ms("1min"));
 		targetElement.insertAdjacentHTML(
 			"beforeend",
-			`<span style="margin-left: 5px;">/<img id="nikoruKun_total" src="${settings.nikoruImage_tate}"><span id="videoTotalNikorare"></span></span>`
+			`<span style="margin-left: 5px;">/<img id="gijinikoru_nikoruKun_total" src="${settings.nikoruImage_tate}"><span id="videoTotalNikorare"></span></span>`
 		);
 	}
 
@@ -910,6 +910,7 @@ class SingleTooltip {
 const GN = {};
 let nikorizumiCIDList = []; // ニコり済みコメ番リスト
 let nikorichuCIDList = []; // （範囲ニコる用）ニコり中コメ番リスト
+let nikorichuAllCIDList = []; // （範囲ニコる用）ニコり中に収集した全てのコメ番のリスト
 let nikorichuRowList = []; // （範囲ニコる用）ニコり中行DOMリスト
 let nikorichu = false; // （範囲ニコる用）ニコり中か
 let mid = null; // 動画番号
@@ -921,6 +922,7 @@ let canvasTicket = null; // グリッドカンバスDOM監視処理チケット
 let inHTML5PlayerPage = false; // HTML5版プレイヤーページか
 let debugTooltipIsSet = false; // デバッグ用ツールチップセットフラグ
 let tooltip = null;
+let observer = null;
 
 // 初期化処理
 GN.init = async function (movieId) {
@@ -979,7 +981,7 @@ async function prepare(movieId) {
 			tooltip.dataset.disabled = getTooltipStyle(row).disabled ? "true" : "false";
 		},
 		margin: 52,
-		classes: ["nikoruTooltip"],
+		classes: ["gijinikoru_nikoruTooltip"],
 	});
 
 	// CSS変数を設定
@@ -991,23 +993,6 @@ async function prepare(movieId) {
 		"--gijinikoru-background",
 		`url(${settings.nikoruBackground})`
 	);
-
-	// if (commentPostObserverIsSet === false) {
-	// 	const process = () => {
-	//
-	// 		/* 取得する */
-	// 		var nico = require('playerapp/player/Nicoplayer');
-	//
-	// 		/* イベントハンドラを設定する */
-	// 		nico.onVideoSeeked = function (e) {
-	// 			console.log(e);
-	// 		};
-	// 	};
-	//
-	// 	location.href = `javascript: (${process})();`;
-	//
-	// 	commentPostObserverIsSet = true;
-	// }
 }
 
 // 更新ボタン押下イベントハンドラ
@@ -1039,8 +1024,13 @@ async function onGotNimj(nimj) {
 	loglevel.debug("コメントリストが表示されました。");
 	const gridCanvas = gridCanvasDOM = element;
 
+	if (observer != null) {
+		// 画面更新なしで別動画に遷移した場合の監視の多重実行を防ぐための制御
+		observer.disconnect();
+	}
+
 	// コメント枠内部の監視方法を定義する
-	const observer = new MutationObserver(function (mutations) {
+	observer = new MutationObserver(function (mutations) {
 		mutations.forEach(function (mutation) {
 			const target = inHTML5PlayerPage
 				? $$("[role=row]:not(.nikoru)", mutation.target)
@@ -1048,13 +1038,10 @@ async function onGotNimj(nimj) {
 			canvasObserver(target);
 		});
 	});
-
-	if (inHTML5PlayerPage) {
-		addRangeNicoru(gridCanvasDOM);
-	}
-
 	let config = {childList: true};
 	observer.observe(gridCanvasDOM, config); // コメント枠内部の監視を開始する
+
+	addRangeNicoru(gridCanvasDOM);
 
 	// 監視前に追加された行を処理する
 	const rowDOM = inHTML5PlayerPage
@@ -1080,9 +1067,6 @@ function canvasObserver(rows) {
 		}
 
 		setRowStyle(row, inHTML5PlayerPage, originalNimj, nikorizumiCIDList);
-		const comment = inHTML5PlayerPage
-			? $("[data-name=content] .CommentPanelDataGrid-cell", row).textContent
-			: $(".r0", row).textContent;
 		const commentId = getCommentId(row, inHTML5PlayerPage);
 		const isNikorared = nikorizumiCIDList.includes(commentId);
 		const rowTooltipStyle = getTooltipStyle(row);
@@ -1096,7 +1080,7 @@ function canvasObserver(rows) {
 
 		// デバッグモード時、デバッグ用にツールチップを消えないようにする
 		if (settings.debug && !debugTooltipIsSet) {
-			$(".nikoruTooltip")
+			$(".gijinikoru_nikoruTooltip")
 				.style.setProperty("display", "block", "important");
 			debugTooltipIsSet = true;
 		}
@@ -1116,6 +1100,7 @@ function canvasObserver(rows) {
 function addRangeNicoru(gridCanvasDOM) {
 	gridCanvasDOM.addEventListener("mousedown", (e) => {
 		nikorichuCIDList = [];
+		nikorichuAllCIDList = [];
 		nikorichuRowList = [];
 		if (addRowForRangeNicoru(e) === true) {
 			nikorichu = true;
@@ -1128,11 +1113,13 @@ function addRangeNicoru(gridCanvasDOM) {
 	gridCanvasDOM.addEventListener("mouseup", (e) => {
 		if (!nikorichu) return;
 		addRowForRangeNicoru(e);
+		if (nikorichuAllCIDList.length < 2) return; // if user did not select multi rows
 		for (let i = 0, len = nikorichuCIDList.length; i < len; i++) {
 			execNikoruImpl(nikorichuRowList[i], nikorichuCIDList[i]);
 		}
 		nikorichu = false;
 		nikorichuCIDList = [];
+		nikorichuAllCIDList = [];
 		nikorichuRowList = [];
 	});
 }
@@ -1141,8 +1128,9 @@ function addRowForRangeNicoru(e) {
 	const row = getRowFromTarget(e);
 	if (!row) return;
 	const commentId = getCommentId(row, inHTML5PlayerPage);
-	if (nikorizumiCIDList.includes(commentId)) return;
 	if (nikorichuCIDList.includes(commentId)) return;
+	nikorichuAllCIDList.push(row); // record also nikorizumi CID to recognize if user selected multi rows
+	if (nikorizumiCIDList.includes(commentId)) return;
 	nikorichuCIDList.push(commentId);
 	nikorichuRowList.push(row);
 	return true;
@@ -1162,7 +1150,6 @@ function getRowFromTarget(e) {
 function execNikoruImpl(row, commentId) {
 	if (nikorizumiCIDList.includes(commentId)) return loglevel.info("ニコり済コメントです。"); // ニコり済みの場合は終了
 	nikorizumiCIDList.push(commentId); // ニコり済みコメ番リストに追加する
-	loglevel.info(row, commentId);
 	const rowTooltipStyle = getTooltipStyle(row);
 
 	// ニコるくんを灰色にする
@@ -1193,49 +1180,16 @@ function execNikoruImpl(row, commentId) {
 // ニコる実行
 function execNikoru(e) {
 	loglevel.info("ニコる処理を開始します。");
-	const clickedElement = e.target; // クリックされた要素を取得する
-	const shouldProcess = inHTML5PlayerPage
-		? exists(".CommentPanelDataGrid-cell", clickedElement.parentElement)
-		: (clickedElement.classList.contains("slick-cell") && clickedElement.classList.contains("r0")); // 処理対象かを判定する
-	if (shouldProcess === false) return loglevel.info("ニコる処理対象外です。"); // 処理対象でなければ終了する
+	const row = getRowFromTarget(e);
+	if (!row) return;
 
 	// ダブルクリック時にシークしない設定の場合、シークを防止する
 	if (optionValues.seekByDoubleClick === false) {
 		killEvent(e);
 	}
 
-	const row = inHTML5PlayerPage
-		? clickedElement.closest("[role=row]")
-		: clickedElement.parentElement; // 行DOMを取得する
 	const commentId = getCommentId(row, inHTML5PlayerPage); // コメントIDを取得する
-	if (nikorizumiCIDList.includes(commentId)) return loglevel.info("ニコり済コメントです。"); // ニコり済みの場合は終了
-	nikorizumiCIDList.push(commentId); // ニコり済みコメ番リストに追加する
-
-	const rowTooltipStyle = getTooltipStyle(row);
-
-	// ニコるくんを灰色にする
-	rowTooltipStyle.disabled = true;
-	tooltip.update(row);
-
-	setTimeout(function () {
-		setRowStyle(row, inHTML5PlayerPage, originalNimj, nikorizumiCIDList); // 今回のニコりを加味してスタイルを更新する
-		// ニコられた数を更新
-		rowTooltipStyle.content = getRealNikorare(commentId, originalNimj, nikorizumiCIDList);
-		tooltip.update(row);
-	}, ms("0.5s"));
-
-	// 送信する
-	loglevel.debug("ニコる情報を送信中…", {movieId: mid, commentId: commentId});
-	fetch(settings.POST_URL + mid, {
-		headers: {
-			"Accept": "application/json",
-			"Content-Type": "application/json"
-		},
-		method: "PUT",
-		body: JSON.stringify({
-			cid: commentId
-		}),
-	}).then(() => loglevel.debug("ニコる情報の送信に成功しました。"));
+	execNikoruImpl(row, commentId);
 }
 
 // 初期化済みかを判定する

@@ -31,7 +31,7 @@ class NiconicoAPIConnector:
         result = self.__access_to_api("http://flapi.nicovideo.jp/api/getflv/" + video_id)
         result = parse.parse_qs(result.text)
         if not result or 'thread_id' not in result:
-            raise VideoDataGetError('failed to get video api info from niconico API. video_id -> {}'.format(video_id))
+            raise VideoDataGetError('failed to get video api info from niconico API. video_id -> {}, response -> {}'.format(video_id, result))
         return VideoAPIInfo(video_id, int(result['thread_id'][0]), result['user_id'][0], result['ms'][0],
                             result['userkey'][0])
 
@@ -54,7 +54,7 @@ class NiconicoAPIConnector:
         root = ElementTree.fromstring(api_response.content)
         data = {child.tag: child.text for child in root[0]}
         if not data or 'video_id' not in data:
-            raise VideoDataGetError('failed to get video info from niconico API. video_id -> {}'.format(video_id))
+            raise VideoDataGetError('failed to get video info from niconico API. video_id -> {}, response -> {}'.format(video_id, data))
         return VideoInfo(data)
 
     def __get_params_for_comment(self, video_api_info: VideoAPIInfo):

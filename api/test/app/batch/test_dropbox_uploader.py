@@ -1,8 +1,6 @@
 """
 dc-test /usr/test/app/batch/test_dropbox_uploader.py
 """
-import os
-from os import makedirs
 from unittest import mock
 
 import pytest
@@ -13,6 +11,7 @@ from src.app.batch.dropbox_uploader import DropboxUploader
 from src.app.config.hard_constants import HardConstants
 from src.app.models.job_log import JobLogDAO, JobLogType, JobLogStatus
 from test.app.db_test_helper import db_test_session
+from test.app.models.data import TestDataUtil
 
 
 class TestDropboxUploader:
@@ -37,18 +36,11 @@ class TestDropboxUploader:
                 assert JobLogDAO(session).find_by_type(JobLogType.UPLOAD_TO_STORAGE).status == JobLogStatus.ABORTED
 
     class Test_upload:
-        @staticmethod
-        def make_test_file(path: str, size: int):
-            os.makedirs(os.path.dirname(path), exist_ok=True)
-            with open(path, 'w') as f:
-                f.write('1' * size)
-
         def test_short_file(self):
             with db_test_session() as session:
                 # setup
-                test_zip_path = HardConstants.App.TEST_ASSET_DIR + '/test'
-                self.make_test_file(test_zip_path, DropboxUploader.CHUNK_SIZE)
-                HardConstants.App.DB_DUMP_ZIP = test_zip_path
+                HardConstants.App = HardConstants.Test
+                TestDataUtil.make_test_file(HardConstants.App.DB_DUMP_ZIP, DropboxUploader.CHUNK_SIZE)
 
                 # run
                 with mock.patch.object(Dropbox, 'files_upload'), \
@@ -62,9 +54,8 @@ class TestDropboxUploader:
         def test_long_file(self):
             with db_test_session() as session:
                 # setup
-                test_zip_path = HardConstants.App.TEST_ASSET_DIR + '/test'
-                self.make_test_file(test_zip_path, DropboxUploader.CHUNK_SIZE * 2 + 1)
-                HardConstants.App.DB_DUMP_ZIP = test_zip_path
+                HardConstants.App = HardConstants.Test
+                TestDataUtil.make_test_file(HardConstants.App.DB_DUMP_ZIP, DropboxUploader.CHUNK_SIZE * 2 + 1)
 
                 # run
                 with mock.patch.object(Dropbox, 'files_upload'), \

@@ -1,4 +1,6 @@
-from datetime import datetime
+"""
+dc-test /usr/test/app/batch/test_comments.py
+"""
 
 from src.app.batch.comment import Comment
 from src.app.batch.comments import Comments
@@ -14,8 +16,10 @@ class TestComments:
             # setup
             comment_data = TestData.CommentObject.CO_1
             comment = Comment(comment_data)
+
             # run
             result = Comments([{'chat': comment_data}]).comments
+
             # verify
             assert result[0].id == comment.id
             assert result[0].thread == comment.thread
@@ -26,3 +30,14 @@ class TestComments:
             assert result[0].official_nicoru == comment.official_nicoru
             assert result[0].was_deleted == comment.was_deleted
             assert result[0].text == comment.text
+
+        def test_regular_and_irregular_comments(self):
+            # setup
+            comment_data = TestData.CommentObject.CO_1
+            comment = Comment(comment_data)
+
+            # run
+            result = Comments([{'chat': comment_data}, {}]).comments
+
+            # verify
+            assert result[0].id == comment.id

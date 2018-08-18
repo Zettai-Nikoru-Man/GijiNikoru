@@ -81,14 +81,14 @@ export async function setVideoTotalNikoru(inHTML5PlayerPage, myNimj) {
 	const videoTotalNikoru_commaSeparated = videoTotalNikoru.toLocaleString("ja-JP");
 
 	// 合計ニコられ数表示枠がまだ存在しない場合は追加する
-	if (!exists("#nikoruKun_total")) {
+	if (!exists("#gijinikoru_nikoruKun_total")) {
 		const target = inHTML5PlayerPage
 			? ".CommentCountMeta-counter"
 			: ".videoStatsComment";
 		const targetElement = await waitFor(target, ms("1min"));
 		targetElement.insertAdjacentHTML(
 			"beforeend",
-			`<span style="margin-left: 5px;">/<img id="nikoruKun_total" src="${settings.nikoruImage_tate}"><span id="videoTotalNikorare"></span></span>`
+			`<span style="margin-left: 5px;">/<img id="gijinikoru_nikoruKun_total" src="${settings.nikoruImage_tate}"><span id="videoTotalNikorare"></span></span>`
 		);
 	}
 

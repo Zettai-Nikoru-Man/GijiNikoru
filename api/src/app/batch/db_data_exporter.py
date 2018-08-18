@@ -45,8 +45,7 @@ class DBDataExporter:
 
     @classmethod
     def export_data_for_restore(cls):
-        subprocess.call('{} {}'.format(HardConstants.App.DB_EXPORT_SHELL, HardConstants.App.DB_DUMP_SQL),
-                        shell=True)
+        subprocess.call('{} {}'.format(HardConstants.App.DB_EXPORT_SHELL, HardConstants.App.DB_DUMP_SQL), shell=True)
 
     @classmethod
     def compress_exported_data(cls):

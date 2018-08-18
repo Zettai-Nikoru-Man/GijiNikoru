@@ -1,3 +1,9 @@
+"""
+dc-test /usr/test/app/batch/test_db_data_exporter.py
+"""
+
+from unittest import mock
+
 import pytest
 
 from src.app.batch.db_data_exporter import DBDataExporter
@@ -26,8 +32,11 @@ class TestDBDataExporter:
                     official_nicoru=TestData.Comment.OFFICIAL_NICORU_1,
                 )
                 session.commit()
+                HardConstants.App = HardConstants.Test
+
                 # run
                 DBDataExporter.execute()
+
                 # verify
                 with open(HardConstants.App.REPORT_CSV, 'r') as f:
                     assert f.readlines() == [
@@ -43,11 +52,12 @@ class TestDBDataExporter:
         def test_failure(self):
             with db_test_session() as session:
                 # setup
-                DBDataExporter.compress_exported_data = lambda: 1 / 0
+                HardConstants.App = HardConstants.Test
+                with mock.patch.object(DBDataExporter, 'export_public_data', side_effect=Exception):
 
-                # run
-                with pytest.raises(Exception):
-                    DBDataExporter.execute()
+                    # run
+                    with pytest.raises(Exception):
+                        DBDataExporter.execute()
 
                 # verify
                 assert JobLogDAO(session).find_by_type(JobLogType.DB_DATA_EXPORT).status == JobLogStatus.ABORTED
